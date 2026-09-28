@@ -10,12 +10,12 @@ This repo is the public docs + examples home for the API: endpoint reference, th
 
 ## Why
 
-Most "YouTube transcript" code you'll find is a scraper you run yourself: it works until YouTube changes something or your server's IP gets rate-limited, and then it's your problem to fix at 2am. GetYouTubeTranscript runs that scraping infrastructure for you, behind one stable REST API:
+Most "YouTube transcript" code you'll find is a scraper you run yourself: it works until YouTube changes something or your server's IP gets rate-limited, and then it's yours to fix. GetYouTubeTranscript runs that scraping infrastructure for you, behind one stable REST API:
 
 - One API key, one bill, one thing to integrate against - not a scraper to patch every time YouTube changes its page structure
 - Search, channel, and playlist endpoints alongside transcripts, so you're not stitching together three different tools
 - A free tier (100 credits, no card) to try it before you commit to anything
-- A published OpenAPI spec and official SDKs, not a reverse-engineered internal API
+- A published OpenAPI spec and official Python and Node.js SDKs
 
 ## Endpoints
 
@@ -251,7 +251,7 @@ If you're running a quick local script and don't want to sign up for anything, j
 ## FAQ
 
 **Is there an official YouTube transcript API?**
-YouTube itself doesn't publish a public transcript/captions endpoint as part of the official YouTube Data API. GetYouTubeTranscript is a third-party hosted API that fetches transcripts for you, along with search, channel, and playlist data.
+Not for arbitrary videos. The official YouTube Data API has a `captions.download` method, but it only works for videos you own and requires OAuth as the channel owner. GetYouTubeTranscript is an independent hosted API (not affiliated with YouTube or Google) that returns the transcript of any public video with captions, along with search, channel, and playlist data.
 
 **Do I need a Google API key?**
 No. You only need a GetYouTubeTranscript API key, obtained from the dashboard or the self-serve `/signup` + `/signup/verify` flow. No Google Cloud project, no OAuth.
