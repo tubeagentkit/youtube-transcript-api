@@ -32,6 +32,11 @@ transcript() {
     "${BASE_URL}/transcript?v=jNQXAC9IVRw&language=en"
 }
 
+transcript_timestamps() {
+  run "GET /transcript (with segments)" "${auth_header[@]}" \
+    "${BASE_URL}/transcript?v=jNQXAC9IVRw&language=en&timestamps=true"
+}
+
 search_videos() {
   run "GET /search (videos)" "${auth_header[@]}" \
     -G --data-urlencode "q=lofi beats" \
@@ -89,6 +94,7 @@ signup_flow() {
 
 case "${1:-all}" in
   transcript) transcript ;;
+  transcript_timestamps) transcript_timestamps ;;
   search) search_videos ;;
   search_channels) search_channels ;;
   resolve) resolve_channel ;;
@@ -100,6 +106,7 @@ case "${1:-all}" in
   signup) signup_flow ;;
   all)
     transcript
+    transcript_timestamps
     search_videos
     search_channels
     resolve_channel

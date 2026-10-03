@@ -23,7 +23,7 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 
 | Method | Path | Credits | Description |
 | --- | --- | --- | --- |
-| `GET` | `/transcript` | 1 | Full transcript for one video, plus title/author/thumbnail |
+| `GET` | `/transcript` | 1 | Full transcript for one video, plus title/author/thumbnail. Optional per-line timestamps with `timestamps=true` |
 | `GET` | `/search` | 1 | Search YouTube videos or channels, paginated |
 | `GET` | `/resolve` | free | Resolve a channel `@handle`/URL to a channel ID |
 | `GET` | `/channel/latest` | free | Channel metadata + latest uploads (home-tab shelf) |
@@ -77,7 +77,28 @@ curl "https://getyoutubetranscript.com/api/v1/transcript?v=jNQXAC9IVRw&language=
 }
 ```
 
-`/transcript` returns one block of plain text, not per-segment timestamps.
+By default `/transcript` returns one block of plain text. Add `timestamps=true` to also get `data.segments`, one `{start, duration, text}` entry per caption line (times in seconds):
+
+```bash
+curl "https://getyoutubetranscript.com/api/v1/transcript?v=5e37ZT3SQbk&language=en&timestamps=true" \
+  -H "Authorization: Bearer sk_live_..."
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "video_id": "5e37ZT3SQbk",
+    "language_code": "en",
+    "transcript": "So, Reed, education, which a lot of ...",
+    "segments": [
+      { "start": 3.96, "duration": 4.56, "text": "So, Reed, education, which a lot of" }
+    ]
+  }
+}
+```
+
+The other fields are the same as above (shortened here). Without `timestamps=true` there is no `segments` key. It costs the same 1 credit.
 
 ## Parameters
 
@@ -87,6 +108,7 @@ curl "https://getyoutubetranscript.com/api/v1/transcript?v=jNQXAC9IVRw&language=
 | --- | --- | --- |
 | `v` | yes | YouTube video URL (full or short) or an 11-character video ID |
 | `language` | no | Caption language code, e.g. `en`, `es` (default `en`) |
+| `timestamps` | no | Set to `true` to also return `data.segments`: one `{start, duration, text}` per caption line, times in seconds. Same 1 credit. |
 
 ### `GET /search`
 

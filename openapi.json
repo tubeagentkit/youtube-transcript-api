@@ -70,7 +70,7 @@
       "get": {
         "operationId": "getTranscript",
         "summary": "Get a YouTube video transcript",
-        "description": "Full transcript for one video, plus title/author/thumbnail metadata. One block of text - no per-segment timestamps.",
+        "description": "Full transcript for one video, plus title/author/thumbnail metadata. One block of text by default; set timestamps=true to also get per-line segments (start, duration, text).",
         "x-credit-cost": 1,
         "parameters": [
           {
@@ -91,11 +91,21 @@
               "default": "en"
             },
             "description": "Caption language code, e.g. 'en', 'es'."
+          },
+          {
+            "name": "timestamps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Set to true to also return data.segments: one {start, duration, text} per caption line, times in seconds. Same 1 credit. Without it the response has no segments key."
           }
         ],
         "responses": {
           "200": {
-            "description": "Transcript retrieved.",
+            "description": "Transcript retrieved. data.segments is present only when timestamps=true.",
             "content": {
               "application/json": {
                 "example": {
