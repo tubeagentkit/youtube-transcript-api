@@ -24,6 +24,7 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 | Method | Path | Credits | Description |
 | --- | --- | --- | --- |
 | `GET` | `/transcript` | 1 | Full transcript for one video, plus title/author/thumbnail and caption provenance. Optional per-line timestamps with `timestamps=true` |
+| `GET` | `/transcript/languages` | free | A video's caption languages (manual or auto-generated) and which one a default request returns |
 | `POST` | `/batch` | 1 per successful video | Queue up to 100 videos at once; results by polling or a signed webhook |
 | `GET` | `/batch` | free | Batch status and a page of results |
 | `GET` | `/search` | 1 | Search YouTube videos or channels, paginated |
@@ -123,6 +124,14 @@ The other fields are the same as above (shortened here). Without `timestamps=tru
 | `v` | yes | YouTube video URL (full or short) or an 11-character video ID |
 | `language` | no | Caption language code, e.g. `en`, `es` (default `en`) |
 | `timestamps` | no | Set to `true` to also return `data.segments`: one `{start, duration, text}` per caption line, times in seconds. Same 1 credit. |
+
+### `GET /transcript/languages`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `v` | yes | YouTube video URL (full or short) or an 11-character video ID |
+
+Returns `default_language_code` (what `/transcript` returns with no `language`) and `languages`: one `{language_code, name, caption_type}` per language and caption type. An empty list means the video has captions turned off. Free.
 
 ### `POST /batch`
 

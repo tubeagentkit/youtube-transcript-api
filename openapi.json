@@ -271,6 +271,124 @@
         }
       }
     },
+    "/transcript/languages": {
+      "get": {
+        "operationId": "getTranscriptLanguages",
+        "summary": "List a video's caption languages",
+        "description": "The caption languages a video offers, creator-uploaded ('manual') and YouTube speech recognition ('auto'), so you can pick one before calling /transcript. One entry per language and caption type. default_language_code is what /transcript returns when no language is given. A video with captions turned off returns an empty list. Free.",
+        "x-credit-cost": 0,
+        "parameters": [
+          {
+            "name": "v",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "YouTube video URL (full or short) or an 11-character video ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available caption languages.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "video_id": "kJQP7kiw5Fk",
+                    "default_language_code": "en",
+                    "languages": [
+                      {
+                        "language_code": "en",
+                        "name": "English - en",
+                        "caption_type": "manual"
+                      },
+                      {
+                        "language_code": "es",
+                        "name": "Spanish",
+                        "caption_type": "manual"
+                      },
+                      {
+                        "language_code": "ko",
+                        "name": "Korean (auto-generated)",
+                        "caption_type": "auto"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video unavailable, private, or removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/search": {
       "get": {
         "operationId": "searchYoutube",
