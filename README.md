@@ -23,7 +23,9 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 
 | Method | Path | Credits | Description |
 | --- | --- | --- | --- |
-| `GET` | `/transcript` | 1 | Full transcript for one video, plus title/author/thumbnail. Optional per-line timestamps with `timestamps=true` |
+| `GET` | `/transcript` | 1 | Full transcript for one video, plus title/author/thumbnail and caption provenance. Optional per-line timestamps with `timestamps=true` |
+| `POST` | `/batch` | 1 per successful video | Queue up to 100 videos at once; results by polling or a signed webhook |
+| `GET` | `/batch` | free | Batch status and a page of results |
 | `GET` | `/search` | 1 | Search YouTube videos or channels, paginated |
 | `GET` | `/resolve` | free | Resolve a channel `@handle`/URL to a channel ID |
 | `GET` | `/channel/latest` | free | Channel metadata + latest uploads (home-tab shelf) |
@@ -67,15 +69,27 @@ curl "https://getyoutubetranscript.com/api/v1/transcript?v=jNQXAC9IVRw&language=
   "data": {
     "video_id": "jNQXAC9IVRw",
     "language_code": "en",
+    "requested_language": "en",
+    "caption_type": "manual",
     "title": "Me at the zoo",
     "author_name": "jawed",
     "author_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PVoOGeMg",
     "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
     "transcript": "All right, so here we are, in front of the elephants...",
-    "word_count": 39
+    "word_count": 39,
+    "cached": true,
+    "fetched_at": "2026-09-20T03:10:58.938Z"
   }
 }
 ```
+
+| Field | Meaning |
+| --- | --- |
+| `language_code` | The caption track actually returned |
+| `requested_language` | What you asked for. If it differs from `language_code`, YouTube didn't have that language |
+| `caption_type` | `manual` (uploaded by the creator), `auto` (YouTube speech recognition), or `null` if unknown |
+| `cached` | `true` when served from the stored copy rather than fetched from YouTube just now |
+| `fetched_at` | ISO 8601 time it was fetched from YouTube |
 
 By default `/transcript` returns one block of plain text. Add `timestamps=true` to also get `data.segments`, one `{start, duration, text}` entry per caption line (times in seconds):
 
@@ -109,6 +123,35 @@ The other fields are the same as above (shortened here). Without `timestamps=tru
 | `v` | yes | YouTube video URL (full or short) or an 11-character video ID |
 | `language` | no | Caption language code, e.g. `en`, `es` (default `en`) |
 | `timestamps` | no | Set to `true` to also return `data.segments`: one `{start, duration, text}` per caption line, times in seconds. Same 1 credit. |
+
+### `POST /batch`
+
+Queue up to 100 videos in one call. Returns `202` with a `batch_id` immediately; transcripts are fetched in the background. Submitting is free; 1 credit per video that returns a transcript, failed videos are never charged (10 videos where 2 have no captions = 8 credits).
+
+| Body field | Required | Description |
+| --- | --- | --- |
+| `videos` | yes | Array of 1-100 video URLs or IDs. Duplicates are fetched once |
+| `language` | no | Caption language for every video (default `en`) |
+| `timestamps` | no | `true` to include per-line `segments` in the results |
+| `webhook_url` | no | Public https URL that receives a signed `batch.completed` POST |
+
+Optional header `Idempotency-Key`: retrying with the same key returns the original batch. When `webhook_url` is set, the response includes a `webhook_secret` (shown once). Each delivery has `X-GYT-Signature: t=<unix>,v1=<hex>`, where `v1` is HMAC-SHA256 of `"<t>.<raw body>"` keyed with that secret; both SDKs ship a `verify_webhook_signature` / `verifyWebhookSignature` helper. At most 5 unfinished batches per account; results are kept 7 days.
+
+```bash
+curl -X POST "https://getyoutubetranscript.com/api/v1/batch" \
+  -H "Authorization: Bearer sk_live_..." -H "Content-Type: application/json" \
+  -d '{"videos": ["jNQXAC9IVRw", "dQw4w9WgXcQ"]}'
+```
+
+### `GET /batch`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `id` | yes | The `batch_id` from `POST /batch` |
+| `offset` | no | Items to skip (default `0`) |
+| `limit` | no | Items per page, 1-50 (default `20`) |
+
+Returns `status` (`queued` / `processing` / `completed`), counts, `credits_charged`, and `items` in submission order. Succeeded items carry the same fields as `/transcript` (except `cached`); failed items carry an `error_code` such as `TRANSCRIPT_DISABLED`, `VIDEO_UNAVAILABLE` or `PAYMENT_REQUIRED`. Page with `next_offset` (`null` on the last page).
 
 ### `GET /search`
 
@@ -173,9 +216,10 @@ Every error response has this shape:
 | 402 | `PAYMENT_REQUIRED` | Out of credits - response includes `creditsLeft` and `topupCreditsLeft` |
 | 404 | endpoint-specific (e.g. video/channel/playlist not found, no captions available) | Resource doesn't exist or has no transcript |
 | 429 | `RATE_LIMITED` | Rate limit exceeded for your plan tier - response includes `requestsThisMinute` |
+| 429 | `TOO_MANY_BATCHES` | 5 batches still running for this account - wait for one to finish |
 | 500 | `INTERNAL_ERROR` | Something broke on our end |
 
-Failed and rate-limited requests are never charged a credit - only a successful (2xx) response consumes one.
+Failed and rate-limited requests are never charged a credit - only a successful (2xx) response consumes one. For batches, only videos that return a transcript are charged.
 
 ## Rate limits
 
@@ -233,8 +277,8 @@ Run any example: `GYT_API_KEY=sk_live_... python examples/python/get_transcript.
 
 ## Official SDKs
 
-- [youtube-transcript-api-python](https://github.com/tubeagentkit/youtube-transcript-api-python) - typed Python client, plus self-serve signup helpers
-- [youtube-transcript-api-node](https://github.com/tubeagentkit/youtube-transcript-api-node) - zero-dependency Node.js/TypeScript client, ESM + CJS
+- [youtube-transcript-api-python](https://github.com/tubeagentkit/youtube-transcript-api-python) - typed Python client with batch + webhook helpers, plus self-serve signup helpers
+- [youtube-transcript-api-node](https://github.com/tubeagentkit/youtube-transcript-api-node) - zero-dependency Node.js/TypeScript client with batch + webhook helpers, ESM + CJS
 
 ## Other integrations
 

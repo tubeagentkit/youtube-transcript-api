@@ -7,6 +7,10 @@
     "contact": {
       "url": "https://getyoutubetranscript.com/contact"
     },
+    "x-logo": {
+      "url": "https://getyoutubetranscript.com/images/logo.png",
+      "altText": "GetYouTubeTranscript"
+    },
     "license": {
       "name": "Proprietary - see Terms",
       "url": "https://getyoutubetranscript.com/terms-and-conditions"
@@ -55,6 +59,18 @@
           },
           "message": {
             "type": "string"
+          },
+          "creditsLeft": {
+            "type": "integer",
+            "description": "Plan credits remaining. Present on 402 PAYMENT_REQUIRED."
+          },
+          "topupCreditsLeft": {
+            "type": "integer",
+            "description": "Top-up credits remaining. Present on 402 PAYMENT_REQUIRED."
+          },
+          "requestsThisMinute": {
+            "type": "integer",
+            "description": "Requests counted in the current minute. Present on 429 RATE_LIMITED."
           }
         },
         "required": [
@@ -70,7 +86,7 @@
       "get": {
         "operationId": "getTranscript",
         "summary": "Get a YouTube video transcript",
-        "description": "Full transcript for one video, plus title/author/thumbnail metadata. One block of text by default; set timestamps=true to also get per-line segments (start, duration, text).",
+        "description": "Full transcript for one video, plus title/author/thumbnail metadata. One block of text by default; add 'timestamps=true' to also get 'segments', one {start, duration, text} per caption line (times in seconds). Same credit cost either way. Provenance: language_code is the caption track actually returned and can differ from requested_language (YouTube falls back to the track it has); caption_type is 'manual' (creator-uploaded) or 'auto' (speech recognition), null when unknown for older transcripts; cached says whether it came from our stored copy, fetched at fetched_at. Failed requests (no captions, unavailable video) are never charged.",
         "x-credit-cost": 1,
         "parameters": [
           {
@@ -100,25 +116,66 @@
               "type": "boolean",
               "default": false
             },
-            "description": "Set to true to also return data.segments: one {start, duration, text} per caption line, times in seconds. Same 1 credit. Without it the response has no segments key."
+            "description": "Set to 'true' to include 'segments': per-line {start, duration, text} timestamps in seconds, e.g. for citing a moment in the video. Off by default because it roughly doubles the response size."
           }
         ],
         "responses": {
           "200": {
-            "description": "Transcript retrieved. data.segments is present only when timestamps=true.",
+            "description": "Transcript retrieved. 'segments' is present only when timestamps=true.",
             "content": {
               "application/json": {
-                "example": {
-                  "success": true,
-                  "data": {
-                    "video_id": "jNQXAC9IVRw",
-                    "language_code": "en",
-                    "title": "Me at the zoo",
-                    "author_name": "jawed",
-                    "author_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PVoOGeMg",
-                    "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
-                    "transcript": "All right, so here we are, in front of the elephants...",
-                    "word_count": 39
+                "examples": {
+                  "text": {
+                    "summary": "Default (plain text)",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "video_id": "jNQXAC9IVRw",
+                        "language_code": "en",
+                        "requested_language": "en",
+                        "caption_type": "manual",
+                        "title": "Me at the zoo",
+                        "author_name": "jawed",
+                        "author_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PVoOGeMg",
+                        "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
+                        "transcript": "All right, so here we are, in front of the elephants...",
+                        "word_count": 39,
+                        "cached": true,
+                        "fetched_at": "2026-09-20T03:10:58.938Z"
+                      }
+                    }
+                  },
+                  "withTimestamps": {
+                    "summary": "With timestamps=true",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "video_id": "jNQXAC9IVRw",
+                        "language_code": "en",
+                        "requested_language": "en",
+                        "caption_type": "manual",
+                        "title": "Me at the zoo",
+                        "author_name": "jawed",
+                        "author_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PVoOGeMg",
+                        "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
+                        "transcript": "All right, so here we are, in front of the elephants...",
+                        "word_count": 39,
+                        "cached": true,
+                        "fetched_at": "2026-09-20T03:10:58.938Z",
+                        "segments": [
+                          {
+                            "start": 1.2,
+                            "duration": 2.16,
+                            "text": "All right, so here we are, in front of the"
+                          },
+                          {
+                            "start": 3.36,
+                            "duration": 1.8,
+                            "text": "elephants"
+                          }
+                        ]
+                      }
+                    }
                   }
                 }
               }
@@ -129,26 +186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -158,26 +196,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -203,26 +222,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "paymentRequired": {
@@ -243,26 +243,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -272,26 +253,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -313,7 +275,7 @@
       "get": {
         "operationId": "searchYoutube",
         "summary": "Search YouTube videos or channels",
-        "description": "Provide 'q' for a first page, or 'page_token' (from a previous response's data.pagination.next_page_token) to continue. 'type' restricts results to one kind - it does not mix both.",
+        "description": "Provide 'q' for a first page, or 'page_token' (from a previous response's data.continuation_token) to continue. 'type' restricts results to one kind - it does not mix both.",
         "x-credit-cost": 1,
         "parameters": [
           {
@@ -333,7 +295,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Opaque continuation token from a previous response. Do not construct this yourself."
+            "description": "Short opaque cursor (data.continuation_token) from the previous page. Do not construct it. Expires after 24 hours; a 400 CURSOR_EXPIRED means start again from the first page."
           },
           {
             "name": "type",
@@ -394,9 +356,7 @@
                         }
                       }
                     ],
-                    "pagination": {
-                      "next_page_token": "CBkSDBIKMjAyM..."
-                    }
+                    "continuation_token": "c_bKt9xQ2mVf7LpR0aZ3sWyA"
                   }
                 }
               }
@@ -407,26 +367,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -436,26 +377,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -481,26 +403,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "paymentRequired": {
@@ -521,26 +424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -597,26 +481,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -626,26 +491,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -671,26 +517,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -700,26 +527,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -766,26 +574,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -811,26 +600,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -871,7 +641,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Opaque continuation token from a previous response."
+            "description": "Short opaque cursor (data.continuation_token) from the previous page. Expires after 24 hours; a 400 CURSOR_EXPIRED means start again from the first page."
           }
         ],
         "responses": {
@@ -895,7 +665,7 @@
                       }
                     ],
                     "has_more": true,
-                    "continuation_token": "CAUqA..."
+                    "continuation_token": "c_DfE9mQx2Ln8TbW4kJ1pZsA"
                   }
                 }
               }
@@ -906,26 +676,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -935,26 +686,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -980,26 +712,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "paymentRequired": {
@@ -1020,26 +733,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -1049,26 +743,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -1129,26 +804,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -1158,26 +814,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -1203,26 +840,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -1232,26 +850,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -1302,7 +901,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Opaque continuation token from a previous response."
+            "description": "Short opaque cursor (data.continuation_token) from the previous page. Expires after 24 hours; a 400 CURSOR_EXPIRED means start again from the first page."
           }
         ],
         "responses": {
@@ -1334,26 +933,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -1363,26 +943,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -1408,26 +969,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "paymentRequired": {
@@ -1448,26 +990,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -1508,7 +1031,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Opaque continuation token from a previous response."
+            "description": "Short opaque cursor (data.continuation_token) from the previous page. Expires after 24 hours; a 400 CURSOR_EXPIRED means start again from the first page."
           }
         ],
         "responses": {
@@ -1540,26 +1063,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -1569,26 +1073,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "missing": {
@@ -1614,26 +1099,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "paymentRequired": {
@@ -1654,26 +1120,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -1683,26 +1130,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 },
                 "examples": {
                   "rateLimited": {
@@ -1762,26 +1190,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -1837,26 +1246,359 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "enum": [
-                        false
-                      ]
-                    },
-                    "code": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batch": {
+      "post": {
+        "operationId": "createBatch",
+        "summary": "Queue transcripts for up to 100 videos",
+        "description": "Returns immediately with a batch_id; transcripts are fetched in the background. Poll GET /batch?id=... or pass webhook_url to be notified when it finishes. The call itself is free: 1 credit is charged per video that returns a transcript, and failed videos are never charged (e.g. 10 videos, 8 with captions = 8 credits; temporary failures are retried for you and never billed). Duplicate videos are fetched once. Send an Idempotency-Key header to make retries of this call safe. Webhooks POST {event, batch_id, status, total, succeeded, failed, credits_charged, results_url} with header X-GYT-Signature: t=<unix>,v1=<hex HMAC-SHA256 of '<t>.<raw body>' keyed with webhook_secret>. At most 5 unfinished batches per account; results are kept for 7 days.",
+        "x-credit-cost": "1 per successful video",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "description": "Repeat a request with the same key to get the original batch back instead of a new one."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "videos"
+                ],
+                "properties": {
+                  "videos": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
                       "type": "string"
                     },
-                    "message": {
-                      "type": "string"
+                    "description": "Video URLs or 11-character IDs."
+                  },
+                  "language": {
+                    "type": "string",
+                    "default": "en"
+                  },
+                  "timestamps": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Include per-line 'segments' in results."
+                  },
+                  "webhook_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Public https URL (port 443) notified on completion."
+                  }
+                }
+              },
+              "example": {
+                "videos": [
+                  "dQw4w9WgXcQ",
+                  "https://youtu.be/jNQXAC9IVRw"
+                ],
+                "language": "en",
+                "webhook_url": "https://example.com/hooks/transcripts"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay: the batch created earlier with the same Idempotency-Key.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "batch_id": "324eb615-e4d5-4b3c-b8e7-04235671066b",
+                    "status": "completed",
+                    "language": "en",
+                    "timestamps": false,
+                    "total": 3,
+                    "succeeded": 2,
+                    "failed": 1,
+                    "pending": 0,
+                    "webhook_status": "delivered",
+                    "created_at": "2026-10-05T06:13:32.957Z",
+                    "completed_at": "2026-10-05T06:13:34.294Z",
+                    "results_url": "https://getyoutubetranscript.com/api/v1/batch?id=324eb615-e4d5-4b3c-b8e7-04235671066b",
+                    "idempotent_replay": true
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Queued. webhook_secret is returned once, only when webhook_url was given.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "batch_id": "324eb615-e4d5-4b3c-b8e7-04235671066b",
+                    "status": "queued",
+                    "language": "en",
+                    "timestamps": false,
+                    "total": 3,
+                    "succeeded": 0,
+                    "failed": 0,
+                    "pending": 3,
+                    "webhook_status": "none",
+                    "created_at": "2026-10-05T06:13:32.957Z",
+                    "completed_at": null,
+                    "results_url": "https://getyoutubetranscript.com/api/v1/batch?id=324eb615-e4d5-4b3c-b8e7-04235671066b",
+                    "webhook_secret": "whsec_..."
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "message"
-                  ]
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getBatch",
+        "summary": "Batch status and a page of results",
+        "description": "Items come back in submission order. Succeeded items include the transcript (and 'segments' if the batch asked for timestamps); failed items carry an error_code such as TRANSCRIPT_DISABLED, VIDEO_UNAVAILABLE, LANGUAGE_NOT_AVAILABLE or PAYMENT_REQUIRED. Free.",
+        "x-credit-cost": 0,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status plus items[offset, offset+limit). next_offset is null on the last page.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "batch_id": "324eb615-e4d5-4b3c-b8e7-04235671066b",
+                    "status": "completed",
+                    "language": "en",
+                    "timestamps": false,
+                    "total": 3,
+                    "succeeded": 2,
+                    "failed": 1,
+                    "pending": 0,
+                    "webhook_status": "delivered",
+                    "created_at": "2026-10-05T06:13:32.957Z",
+                    "completed_at": "2026-10-05T06:13:34.294Z",
+                    "results_url": "https://getyoutubetranscript.com/api/v1/batch?id=324eb615-e4d5-4b3c-b8e7-04235671066b",
+                    "credits_charged": 2,
+                    "items": [
+                      {
+                        "position": 0,
+                        "status": "succeeded",
+                        "charged": true,
+                        "video_id": "jNQXAC9IVRw",
+                        "language_code": "en",
+                        "requested_language": "en",
+                        "caption_type": "manual",
+                        "title": "Me at the zoo",
+                        "author_name": "jawed",
+                        "author_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PVoOGeMg",
+                        "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
+                        "transcript": "All right, so here we are, in front of the elephants...",
+                        "word_count": 39,
+                        "fetched_at": "2026-09-20T03:10:58.938Z"
+                      },
+                      {
+                        "position": 1,
+                        "video_id": "aaaaaaaaaaa",
+                        "status": "failed",
+                        "charged": false,
+                        "error_code": "VIDEO_UNAVAILABLE"
+                      }
+                    ],
+                    "next_offset": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No batch with this id for this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
                 }
               }
             }
