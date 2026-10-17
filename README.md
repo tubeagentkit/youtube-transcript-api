@@ -28,8 +28,8 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 | `POST` | `/batch` | 1 per successful video | Queue up to 100 videos at once; results by polling or a signed webhook |
 | `GET` | `/batch` | free | Batch status and a page of results |
 | `GET` | `/search` | 1 | Search YouTube videos or channels, paginated |
-| `GET` | `/resolve` | free | Resolve a channel `@handle`/URL to a channel ID |
-| `GET` | `/channel/latest` | free | Channel metadata + latest uploads (home-tab shelf) |
+| `GET` | `/resolve` | 1 credit | Resolve a channel `@handle`/URL to a channel ID |
+| `GET` | `/channel/latest` | 1 credit | Channel metadata + latest uploads (home-tab shelf) |
 | `GET` | `/channel/search` | 1 | Search within one channel's videos, paginated |
 | `GET` | `/channel/videos` | 1 | Full, paginated upload history for a channel |
 | `GET` | `/playlist` | 1 | List every video in a playlist, paginated |

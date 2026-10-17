@@ -585,8 +585,8 @@
       "get": {
         "operationId": "resolveChannelHandle",
         "summary": "Resolve a channel handle/URL to a channel ID",
-        "description": "Free (0 credits) - still requires an API key and is still rate-limited, since it triggers a real lookup.",
-        "x-credit-cost": 0,
+        "description": "Costs 1 credit per successful call. The answer for a handle is remembered for a week.",
+        "x-credit-cost": 1,
         "parameters": [
           {
             "name": "handle",
@@ -645,6 +645,27 @@
                       "success": false,
                       "code": "INVALID_API_KEY",
                       "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
                     }
                   }
                 }
@@ -904,8 +925,8 @@
       "get": {
         "operationId": "getChannelLatestVideos",
         "summary": "Get a channel's metadata and latest uploads",
-        "description": "Free (0 credits). Returns full channel metadata plus whatever \"Latest Videos\" shelf the channel's home tab shows. For the complete, paginated upload history use /channel/videos instead.",
-        "x-credit-cost": 0,
+        "description": "Costs 1 credit per successful call. Returns full channel metadata plus whatever \"Latest Videos\" shelf the channel's home tab shows. For the complete, paginated upload history use /channel/videos instead.",
+        "x-credit-cost": 1,
         "parameters": [
           {
             "name": "channel",
@@ -968,6 +989,27 @@
                       "success": false,
                       "code": "INVALID_API_KEY",
                       "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
                     }
                   }
                 }
