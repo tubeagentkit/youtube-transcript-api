@@ -29,7 +29,7 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 | `GET` | `/batch` | free | Batch status and a page of results |
 | `GET` | `/search` | 1 | Search YouTube videos or channels, paginated |
 | `GET` | `/resolve` | 1 credit | Resolve a channel `@handle`/URL to a channel ID |
-| `GET` | `/channel/latest` | 1 credit | Channel metadata + latest uploads (home-tab shelf) |
+| `GET` | `/channel/latest` | 1 credit | Channel details + its 15 newest uploads |
 | `GET` | `/channel/search` | 1 | Search within one channel's videos, paginated |
 | `GET` | `/channel/videos` | 1 | Full, paginated upload history for a channel |
 | `GET` | `/playlist` | 1 | List every video in a playlist, paginated |

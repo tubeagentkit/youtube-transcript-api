@@ -2,7 +2,7 @@
 """
 List every video a YouTube channel has uploaded, via the
 GetYouTubeTranscript REST API. Walks the full paginated /videos tab
-(not just the home-tab "latest" shelf).
+(not just the 15 newest uploads that /channel/latest returns).
 
 Usage:
     GYT_API_KEY=sk_live_... python channel_videos.py @mkbhd

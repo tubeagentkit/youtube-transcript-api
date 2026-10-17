@@ -609,7 +609,7 @@
                     "channel_id": "UCBJycsmduvYEL83R_U4JriQ",
                     "title": "Marques Brownlee",
                     "handle": "http://www.youtube.com/@mkbhd",
-                    "resolved_via": "scrape"
+                    "resolved_via": "lookup"
                   }
                 }
               }
@@ -925,7 +925,7 @@
       "get": {
         "operationId": "getChannelLatestVideos",
         "summary": "Get a channel's metadata and latest uploads",
-        "description": "Costs 1 credit per successful call. Returns full channel metadata plus whatever \"Latest Videos\" shelf the channel's home tab shows. For the complete, paginated upload history use /channel/videos instead.",
+        "description": "Costs 1 credit per successful call. Returns the channel's details (title, handle, description, subscribers, video count, avatar) and its 15 newest uploads, remembered for an hour. For the complete, paginated upload history use /channel/videos instead.",
         "x-credit-cost": 1,
         "parameters": [
           {
@@ -951,7 +951,7 @@
                     },
                     "data": {
                       "type": "object",
-                      "description": "Channel metadata plus a home-tab video shelf. Field set is passed through from upstream and may grow over time - treat as loosely typed.",
+                      "description": "Channel details plus the 15 newest uploads. The field set may grow over time - treat unknown fields as additive.",
                       "additionalProperties": true
                     }
                   }
@@ -1193,7 +1193,7 @@
       "get": {
         "operationId": "listChannelVideos",
         "summary": "List every video a channel has uploaded",
-        "description": "The channel's full /videos tab, paginated - not just the home-tab shelf /channel/latest returns. Provide 'channel' for a first page, or 'continuation' (from a previous response's data.continuation_token) to fetch the next page.",
+        "description": "The channel's full /videos tab, paginated - not just the 15 newest uploads /channel/latest returns. Provide 'channel' for a first page, or 'continuation' (from a previous response's data.continuation_token) to fetch the next page.",
         "x-credit-cost": 1,
         "parameters": [
           {
