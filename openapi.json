@@ -275,8 +275,8 @@
       "get": {
         "operationId": "getTranscriptLanguages",
         "summary": "List a video's caption languages",
-        "description": "The caption languages a video offers, creator-uploaded ('manual') and YouTube speech recognition ('auto'), so you can pick one before calling /transcript. One entry per language and caption type. default_language_code is what /transcript returns when no language is given. A video with captions turned off returns an empty list. Free.",
-        "x-credit-cost": 0,
+        "description": "The caption languages a video offers, creator-uploaded ('manual') and YouTube speech recognition ('auto'), so you can pick one before calling /transcript. One entry per language and caption type. default_language_code is what /transcript returns when no language is given. A video with captions turned off returns an empty list. Costs 1 credit per successful call, like /transcript.",
+        "x-credit-cost": 1,
         "parameters": [
           {
             "name": "v",
@@ -350,6 +350,27 @@
                       "success": false,
                       "code": "INVALID_API_KEY",
                       "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
                     }
                   }
                 }

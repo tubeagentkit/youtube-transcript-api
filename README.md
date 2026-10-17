@@ -24,7 +24,7 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 | Method | Path | Credits | Description |
 | --- | --- | --- | --- |
 | `GET` | `/transcript` | 1 | Full transcript for one video, plus title/author/thumbnail and caption provenance. Optional per-line timestamps with `timestamps=true` |
-| `GET` | `/transcript/languages` | free | A video's caption languages (manual or auto-generated) and which one a default request returns |
+| `GET` | `/transcript/languages` | 1 credit | A video's caption languages (manual or auto-generated) and which one a default request returns |
 | `POST` | `/batch` | 1 per successful video | Queue up to 100 videos at once; results by polling or a signed webhook |
 | `GET` | `/batch` | free | Batch status and a page of results |
 | `GET` | `/search` | 1 | Search YouTube videos or channels, paginated |
@@ -131,7 +131,7 @@ The other fields are the same as above (shortened here). Without `timestamps=tru
 | --- | --- | --- |
 | `v` | yes | YouTube video URL (full or short) or an 11-character video ID |
 
-Returns `default_language_code` (what `/transcript` returns with no `language`) and `languages`: one `{language_code, name, caption_type}` per language and caption type. An empty list means the video has captions turned off. Free.
+Returns `default_language_code` (what `/transcript` returns with no `language`) and `languages`: one `{language_code, name, caption_type}` per language and caption type. An empty list means the video has captions turned off. Costs 1 credit per successful call.
 
 ### `POST /batch`
 
