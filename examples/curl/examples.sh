@@ -67,6 +67,42 @@ channel_videos() {
     "${BASE_URL}/channel/videos"
 }
 
+channel_shorts() {
+  run "GET /channel/videos (Shorts, most popular first)" "${auth_header[@]}" \
+    -G --data-urlencode "channel=@mkbhd" --data-urlencode "tab=shorts" --data-urlencode "sort=popular" \
+    "${BASE_URL}/channel/videos"
+}
+
+channel_playlists() {
+  run "GET /channel/playlists" "${auth_header[@]}" \
+    -G --data-urlencode "channel=@mkbhd" \
+    "${BASE_URL}/channel/playlists"
+}
+
+channel_posts() {
+  run "GET /channel/posts" "${auth_header[@]}" \
+    -G --data-urlencode "channel=@mkbhd" \
+    "${BASE_URL}/channel/posts"
+}
+
+channel_banner() {
+  run "GET /channel/banner" "${auth_header[@]}" \
+    -G --data-urlencode "channel=@mkbhd" \
+    "${BASE_URL}/channel/banner"
+}
+
+video_related() {
+  run "GET /video/related" "${auth_header[@]}" \
+    -G --data-urlencode "v=dQw4w9WgXcQ" \
+    "${BASE_URL}/video/related"
+}
+
+video_dislikes() {
+  run "GET /video/dislikes" "${auth_header[@]}" \
+    -G --data-urlencode "v=dQw4w9WgXcQ" \
+    "${BASE_URL}/video/dislikes"
+}
+
 channel_search() {
   run "GET /channel/search" "${auth_header[@]}" \
     -G --data-urlencode "channel=@mkbhd" --data-urlencode "q=iphone" \
@@ -101,6 +137,12 @@ case "${1:-all}" in
   channel_latest) channel_latest ;;
   channel_videos) channel_videos ;;
   channel_search) channel_search ;;
+  channel_shorts) channel_shorts ;;
+  channel_playlists) channel_playlists ;;
+  channel_posts) channel_posts ;;
+  channel_banner) channel_banner ;;
+  video_related) video_related ;;
+  video_dislikes) video_dislikes ;;
   playlist) playlist ;;
   credits) credits ;;
   signup) signup_flow ;;
@@ -113,6 +155,12 @@ case "${1:-all}" in
     channel_latest
     channel_videos
     channel_search
+    channel_shorts
+    channel_playlists
+    channel_posts
+    channel_banner
+    video_related
+    video_dislikes
     playlist
     credits
     signup_flow

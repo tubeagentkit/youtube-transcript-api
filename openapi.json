@@ -78,6 +78,792 @@
           "code",
           "message"
         ]
+      },
+      "Transcript": {
+        "type": "object",
+        "required": [
+          "video_id",
+          "language_code",
+          "requested_language",
+          "caption_type",
+          "title",
+          "author_name",
+          "author_url",
+          "thumbnail_url",
+          "transcript",
+          "word_count",
+          "fetched_at"
+        ],
+        "properties": {
+          "video_id": {
+            "type": "string"
+          },
+          "language_code": {
+            "type": "string",
+            "description": "Track actually returned. Can differ from requested_language: YouTube falls back to the track it has (e.g. 'en' to 'en-GB')."
+          },
+          "requested_language": {
+            "type": "string"
+          },
+          "translated_to": {
+            "type": "string",
+            "description": "Present only when 'translate' was used."
+          },
+          "caption_type": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "auto",
+              null
+            ],
+            "nullable": true,
+            "description": "Creator captions or speech recognition. Null when unknown."
+          },
+          "title": {
+            "type": "string"
+          },
+          "author_name": {
+            "type": "string"
+          },
+          "author_url": {
+            "type": "string"
+          },
+          "thumbnail_url": {
+            "type": "string"
+          },
+          "transcript": {
+            "type": "string",
+            "description": "The whole transcript as one block of text."
+          },
+          "word_count": {
+            "type": "integer"
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether this response came from our cache. Absent on batch items."
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "segments": {
+            "type": "array",
+            "description": "Present only when timestamps=true. Times are in seconds.",
+            "items": {
+              "type": "object",
+              "required": [
+                "start",
+                "duration",
+                "text"
+              ],
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "duration": {
+                  "type": "number"
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TranscriptLanguages": {
+        "type": "object",
+        "required": [
+          "video_id",
+          "languages"
+        ],
+        "properties": {
+          "video_id": {
+            "type": "string"
+          },
+          "default_language_code": {
+            "type": "string",
+            "description": "The video default caption language, when YouTube states one."
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "language_code",
+                "name",
+                "caption_type"
+              ],
+              "properties": {
+                "language_code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "caption_type": {
+                  "type": "string",
+                  "enum": [
+                    "manual",
+                    "auto"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "SearchResults": {
+        "type": "object",
+        "description": "type=video (default) returns 'video_results'; type=channel returns 'channel_results'.",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "video_results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "videoId"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string"
+                },
+                "videoId": {
+                  "type": "string"
+                },
+                "channel": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "link": {
+                      "type": "string"
+                    },
+                    "thumbnail": {
+                      "type": "string"
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "published_date": {
+                  "type": "string"
+                },
+                "views": {
+                  "type": "string"
+                },
+                "length": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "extensions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "thumbnail": {
+                  "type": "object",
+                  "properties": {
+                    "static": {
+                      "type": "string"
+                    },
+                    "rich": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "position": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "channel_results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "title",
+                "channelId"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "channelId": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string"
+                },
+                "thumbnail": {
+                  "type": "string"
+                },
+                "subscribers": {
+                  "type": "string"
+                },
+                "handle": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "verified": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "totalResults": {
+            "type": "integer"
+          },
+          "continuation_token": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque cursor for the next page, null when there is none. Pass it back as page_token or continuation. Expires after 24 hours."
+          }
+        }
+      },
+      "ChannelResolved": {
+        "type": "object",
+        "required": [
+          "channel_id",
+          "title"
+        ],
+        "properties": {
+          "channel_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "resolved_via": {
+            "type": "string"
+          }
+        }
+      },
+      "Credits": {
+        "type": "object",
+        "required": [
+          "plan_credits_left",
+          "topup_credits_left",
+          "plan",
+          "rate_limit_per_minute"
+        ],
+        "properties": {
+          "plan_credits_left": {
+            "type": "integer"
+          },
+          "topup_credits_left": {
+            "type": "integer"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "rate_limit_per_minute": {
+            "type": "integer"
+          }
+        }
+      },
+      "PlaylistPage": {
+        "type": "object",
+        "required": [
+          "playlist_id",
+          "videos",
+          "has_more"
+        ],
+        "properties": {
+          "playlist_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "videos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title"
+              ],
+              "properties": {
+                "position": {
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string"
+                },
+                "channel": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "views": {
+                  "type": "string"
+                },
+                "published_time": {
+                  "type": "string"
+                },
+                "length": {
+                  "type": "string"
+                },
+                "thumbnail": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "continuation_token": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque cursor for the next page, null when there is none. Pass it back as page_token or continuation. Expires after 24 hours."
+          }
+        }
+      },
+      "ChannelVideosPage": {
+        "type": "object",
+        "required": [
+          "videos",
+          "has_more"
+        ],
+        "properties": {
+          "videos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title"
+              ],
+              "properties": {
+                "position": {
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string"
+                },
+                "channel": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "views": {
+                  "type": "string"
+                },
+                "published_time": {
+                  "type": "string"
+                },
+                "length": {
+                  "type": "string"
+                },
+                "thumbnail": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "continuation_token": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque cursor for the next page, null when there is none. Pass it back as page_token or continuation. Expires after 24 hours."
+          }
+        }
+      },
+      "ChannelPlaylistsPage": {
+        "type": "object",
+        "required": [
+          "playlists",
+          "has_more"
+        ],
+        "properties": {
+          "playlists": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title"
+              ],
+              "properties": {
+                "position": {
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "video_count_text": {
+                  "type": "string"
+                },
+                "video_count": {
+                  "type": "integer"
+                },
+                "thumbnail": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "continuation_token": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque cursor for the next page, null when there is none. Pass it back as page_token or continuation. Expires after 24 hours."
+          }
+        }
+      },
+      "ChannelPostsPage": {
+        "type": "object",
+        "required": [
+          "posts",
+          "has_more"
+        ],
+        "properties": {
+          "posts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "position": {
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "links": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "published_time": {
+                  "type": "string"
+                },
+                "likes": {
+                  "type": "string"
+                },
+                "comments": {
+                  "type": "string"
+                },
+                "attachment": {
+                  "type": "object",
+                  "description": "The post's image, video or poll, when it has one."
+                }
+              }
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "continuation_token": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque cursor for the next page, null when there is none. Pass it back as page_token or continuation. Expires after 24 hours."
+          }
+        }
+      },
+      "RelatedVideos": {
+        "type": "object",
+        "required": [
+          "video_id",
+          "related"
+        ],
+        "properties": {
+          "video_id": {
+            "type": "string"
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "title"
+              ],
+              "properties": {
+                "position": {
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string"
+                },
+                "channel": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "views": {
+                  "type": "string"
+                },
+                "published_time": {
+                  "type": "string"
+                },
+                "length": {
+                  "type": "string"
+                },
+                "thumbnail": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ChannelBanner": {
+        "type": "object",
+        "required": [
+          "channel_id",
+          "has_banner"
+        ],
+        "properties": {
+          "channel_id": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "string"
+          },
+          "has_banner": {
+            "type": "boolean"
+          },
+          "banner": {
+            "type": "object",
+            "description": "Present when the channel has a banner: the uncropped original, the largest crop, and every crop size YouTube serves.",
+            "properties": {
+              "original": {
+                "type": "string"
+              },
+              "largest": {
+                "type": "string"
+              },
+              "sizes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "width": {
+                      "type": "integer"
+                    },
+                    "height": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "VideoDislikes": {
+        "type": "object",
+        "required": [
+          "video_id",
+          "likes",
+          "dislikes",
+          "estimated"
+        ],
+        "properties": {
+          "video_id": {
+            "type": "string"
+          },
+          "likes": {
+            "type": "integer",
+            "description": "Estimated total likes."
+          },
+          "dislikes": {
+            "type": "integer",
+            "description": "Estimated total dislikes."
+          },
+          "rating": {
+            "type": "number",
+            "description": "Estimated star rating out of 5."
+          },
+          "view_count": {
+            "type": "integer"
+          },
+          "raw_likes": {
+            "type": "integer",
+            "description": "Likes as reported by Return YouTube Dislike's own users."
+          },
+          "raw_dislikes": {
+            "type": "integer"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "estimated": {
+            "type": "boolean",
+            "description": "Always true: YouTube no longer publishes dislikes."
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      },
+      "ChannelLatest": {
+        "type": "object",
+        "required": [
+          "channel",
+          "videos_sections"
+        ],
+        "properties": {
+          "channel": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "handle": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "subscribers": {
+                "type": "integer"
+              },
+              "videos": {
+                "type": "integer"
+              },
+              "avatar": {
+                "type": "string"
+              }
+            }
+          },
+          "videos_sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "section_title": {
+                  "type": "string"
+                },
+                "videos": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "title"
+                    ],
+                    "properties": {
+                      "position": {
+                        "type": "integer"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "link": {
+                        "type": "string"
+                      },
+                      "views": {
+                        "type": "integer"
+                      },
+                      "length": {
+                        "type": "string"
+                      },
+                      "published_time": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -117,6 +903,16 @@
               "default": false
             },
             "description": "Set to 'true' to include 'segments': per-line {start, duration, text} timestamps in seconds, e.g. for citing a moment in the video. Off by default because it roughly doubles the response size."
+          },
+          {
+            "name": "translate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$"
+            },
+            "description": "Language code to machine-translate the transcript into, e.g. 'es', 'de', 'zh-CN'. Each caption line is translated in place, so timestamps stay aligned. The response adds 'translated_to'; 'language_code' stays the source track. Same 1-credit cost."
           }
         ],
         "responses": {
@@ -124,6 +920,24 @@
             "description": "Transcript retrieved. 'segments' is present only when timestamps=true.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Transcript"
+                    }
+                  }
+                },
                 "examples": {
                   "text": {
                     "summary": "Default (plain text)",
@@ -249,7 +1063,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -293,6 +1115,24 @@
             "description": "Available caption languages.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TranscriptLanguages"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "data": {
@@ -388,7 +1228,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -482,6 +1330,24 @@
             "description": "Search results.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SearchResults"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "data": {
@@ -559,7 +1425,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -603,6 +1477,24 @@
             "description": "Channel resolved.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChannelResolved"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "data": {
@@ -683,7 +1575,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -717,6 +1617,24 @@
             "description": "Credit balance and plan info.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Credits"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "data": {
@@ -756,7 +1674,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -809,6 +1735,24 @@
             "description": "Playlist page.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PlaylistPage"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "data": {
@@ -899,7 +1843,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -945,14 +1897,19 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
                   "properties": {
                     "success": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
                     },
                     "data": {
-                      "type": "object",
-                      "description": "Channel details plus the 15 newest uploads. The field set may grow over time - treat unknown fields as additive.",
-                      "additionalProperties": true
+                      "$ref": "#/components/schemas/ChannelLatest"
                     }
                   }
                 }
@@ -1027,7 +1984,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1090,6 +2055,24 @@
             "description": "Matching videos from the channel.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChannelVideosPage"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "data": {
@@ -1167,7 +2150,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1193,7 +2184,7 @@
       "get": {
         "operationId": "listChannelVideos",
         "summary": "List every video a channel has uploaded",
-        "description": "The channel's full /videos tab, paginated - not just the 15 newest uploads /channel/latest returns. Provide 'channel' for a first page, or 'continuation' (from a previous response's data.continuation_token) to fetch the next page.",
+        "description": "The channel's full upload list, paginated - not just the home-tab shelf /channel/latest returns. Provide 'channel' for a first page, or 'continuation' (from a previous response's data.continuation_token) to fetch the next page. 'tab' and 'sort' choose the list and its order; they apply to a first page only, since a continuation already carries them.",
         "x-credit-cost": 1,
         "parameters": [
           {
@@ -1204,6 +2195,36 @@
               "type": "string"
             },
             "description": "Channel @handle, URL, or UC... id. Required unless 'continuation' is set."
+          },
+          {
+            "name": "tab",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "videos",
+                "shorts",
+                "streams"
+              ],
+              "default": "videos"
+            },
+            "description": "Which list: 'videos' (uploads), 'shorts', or 'streams' (the Live tab). First page only."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "latest",
+                "popular",
+                "oldest"
+              ],
+              "default": "latest"
+            },
+            "description": "Order: 'latest', 'popular' or 'oldest'. First page only."
           },
           {
             "name": "continuation",
@@ -1217,9 +2238,27 @@
         ],
         "responses": {
           "200": {
-            "description": "Page of the channel's uploaded videos.",
+            "description": "Page of the channel's videos.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChannelVideosPage"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "data": {
@@ -1233,7 +2272,7 @@
                       }
                     ],
                     "has_more": true,
-                    "continuation_token": "EgZ..."
+                    "continuation_token": "c_pqHR9v13sqaqxlcKhA4MnA"
                   }
                 }
               }
@@ -1307,7 +2346,823 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channel/playlists": {
+      "get": {
+        "operationId": "listChannelPlaylists",
+        "summary": "List a channel's playlists",
+        "description": "The channel's Playlists tab, paginated. Pass a playlist's id to /playlist to list its videos. Provide 'channel' for a first page, or 'continuation' (from a previous response's data.continuation_token) to fetch the next page.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Channel @handle, URL, or UC... id. Required unless 'continuation' is set."
+          },
+          {
+            "name": "continuation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Short opaque cursor (data.continuation_token) from the previous page. Expires after 24 hours; a 400 CURSOR_EXPIRED means start again from the first page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of the channel's playlists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChannelPlaylistsPage"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "playlists": [
+                      {
+                        "position": 1,
+                        "id": "PLBsP89CPrMeNIuvr9j3_EQaMwaNJ6rhuQ",
+                        "title": "Retro Tech S2",
+                        "link": "https://www.youtube.com/playlist?list=PLBsP89CPrMeNIuvr9j3_EQaMwaNJ6rhuQ",
+                        "video_count": 5
+                      }
+                    ],
+                    "has_more": false,
+                    "continuation_token": null
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channel/posts": {
+      "get": {
+        "operationId": "listChannelPosts",
+        "summary": "List a channel's community posts",
+        "description": "The channel's Posts tab, paginated: text, links, likes, comments and the attached image or poll. Provide 'channel' for a first page, or 'continuation' (from a previous response's data.continuation_token) to fetch the next page.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Channel @handle, URL, or UC... id. Required unless 'continuation' is set."
+          },
+          {
+            "name": "continuation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Short opaque cursor (data.continuation_token) from the previous page. Expires after 24 hours; a 400 CURSOR_EXPIRED means start again from the first page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of the channel's community posts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChannelPostsPage"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "posts": [
+                      {
+                        "position": 1,
+                        "id": "UgkxX6gkDxQ0KRucvyG7NLui0LhjHp0CLlfZ",
+                        "url": "https://www.youtube.com/post/UgkxX6gkDxQ0KRucvyG7NLui0LhjHp0CLlfZ",
+                        "text": "Alright, it is that time...",
+                        "published_time": "2 years ago",
+                        "likes": "12K",
+                        "comments": "1K"
+                      }
+                    ],
+                    "has_more": true,
+                    "continuation_token": "c_DfE9mQx2Ln8TbW4kJ1pZsA"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channel/banner": {
+      "get": {
+        "operationId": "getChannelBanner",
+        "summary": "Get a channel's banner and avatar",
+        "description": "Costs 1 credit per successful call. The channel's uncropped banner, every crop size YouTube serves, and its avatar. Remembered for a day. has_banner is false for a channel with no banner.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Channel @handle, URL, or UC... id."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The channel banner and avatar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChannelBanner"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "channel_id": "UCBJycsmduvYEL83R_U4JriQ",
+                    "handle": "http://www.youtube.com/@mkbhd",
+                    "title": "Marques Brownlee",
+                    "avatar": "https://yt3.googleusercontent.com/...=s900",
+                    "has_banner": true,
+                    "banner": {
+                      "original": "https://yt3.googleusercontent.com/...=s0",
+                      "largest": "https://yt3.googleusercontent.com/...=w2560",
+                      "sizes": [
+                        {
+                          "url": "https://yt3.googleusercontent.com/...=w1060",
+                          "width": 1060,
+                          "height": 175
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Channel not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/related": {
+      "get": {
+        "operationId": "getRelatedVideos",
+        "summary": "Get the videos YouTube suggests next to a video",
+        "description": "Costs 1 credit per successful call. Returns the suggested videos with their id, title, link, channel, views, age, length and thumbnail. Pass an id to /transcript for what it says.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "v",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "YouTube video ID or full URL."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suggested videos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RelatedVideos"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "video_id": "dQw4w9WgXcQ",
+                    "related": [
+                      {
+                        "position": 1,
+                        "id": "C6Vwl8bD33s",
+                        "title": "Rick Astley - Together Forever (1 Hour)",
+                        "channel": {
+                          "name": "Jacob Neill"
+                        },
+                        "length": "1:01:35"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video not found, private, or deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/dislikes": {
+      "get": {
+        "operationId": "getVideoDislikes",
+        "summary": "Get a video's estimated likes and dislikes",
+        "description": "Costs 1 credit per successful call. YouTube no longer publishes dislikes, so these are estimates from Return YouTube Dislike (estimated is always true). Remembered for an hour.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "v",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "YouTube video ID or full URL."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estimated likes and dislikes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/VideoDislikes"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "video_id": "dQw4w9WgXcQ",
+                    "likes": 19497714,
+                    "dislikes": 521713,
+                    "rating": 4.9,
+                    "view_count": 1830715799,
+                    "deleted": false,
+                    "estimated": true,
+                    "source": "returnyoutubedislike.com"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1359,6 +3214,24 @@
             "description": "Code sent.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "message"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "message": "A 6-digit code was sent to this email. It expires in 10 minutes."
@@ -1404,6 +3277,11 @@
                     "type": "string",
                     "minLength": 6,
                     "maxLength": 6
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "description": "Optional display name for a new account. Ignored if the account already has a name."
                   }
                 }
               }
@@ -1415,6 +3293,25 @@
             "description": "Verified - API key issued.",
             "content": {
               "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "api_key"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "api_key": {
+                      "type": "string",
+                      "description": "The raw key, shown once. Starts with sk_live_."
+                    }
+                  }
+                },
                 "example": {
                   "success": true,
                   "api_key": "sk_live_..."
@@ -1608,7 +3505,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -1765,7 +3670,15 @@
             }
           },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual).",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {

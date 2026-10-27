@@ -31,7 +31,12 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 | `GET` | `/resolve` | 1 credit | Resolve a channel `@handle`/URL to a channel ID |
 | `GET` | `/channel/latest` | 1 credit | Channel details + its 15 newest uploads |
 | `GET` | `/channel/search` | 1 | Search within one channel's videos, paginated |
-| `GET` | `/channel/videos` | 1 | Full, paginated upload history for a channel |
+| `GET` | `/channel/videos` | 1 | A channel's uploads, Shorts or live streams (`tab`), newest, most popular or oldest first (`sort`), paginated |
+| `GET` | `/channel/playlists` | 1 | A channel's playlists, paginated |
+| `GET` | `/channel/posts` | 1 | A channel's community posts, paginated |
+| `GET` | `/channel/banner` | 1 | A channel's banner (uncropped, plus every crop size) and avatar |
+| `GET` | `/video/related` | 1 | The videos YouTube suggests next to a video |
+| `GET` | `/video/dislikes` | 1 | A video's estimated likes and dislikes |
 | `GET` | `/playlist` | 1 | List every video in a playlist, paginated |
 | `GET` | `/credits` | free | Check remaining credit balance, plan, and rate limit |
 | `POST` | `/signup` | free | Self-serve signup step 1: email a 6-digit OTP |
@@ -198,7 +203,51 @@ Returns `status` (`queued` / `processing` / `completed`), counts, `credits_charg
 | Param | Required | Description |
 | --- | --- | --- |
 | `channel` | yes, unless `continuation` is set | Channel `@handle`, URL, or `UC...` id |
+| `tab` | no | `videos` (default), `shorts`, or `streams` (the Live tab). First page only |
+| `sort` | no | `latest` (default), `popular`, or `oldest`. First page only |
+| `continuation` | no | Continuation token from a previous response's `data.continuation_token`. It already carries `tab` and `sort` |
+
+### `GET /channel/playlists`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `channel` | yes, unless `continuation` is set | Channel `@handle`, URL, or `UC...` id |
 | `continuation` | no | Continuation token from a previous response's `data.continuation_token` |
+
+Returns `data.playlists`: one `{position, id, title, link, type, video_count, thumbnail}` per playlist. Pass a playlist's `id` to `/playlist` to list its videos.
+
+### `GET /channel/posts`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `channel` | yes, unless `continuation` is set | Channel `@handle`, URL, or `UC...` id |
+| `continuation` | no | Continuation token from a previous response's `data.continuation_token` |
+
+Returns `data.posts`: one `{position, id, url, text, links, published_time, likes, comments, attachment}` per community post.
+
+### `GET /channel/banner`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `channel` | yes | Channel `@handle`, URL, or `UC...` id |
+
+Returns `data.avatar`, `data.has_banner` and `data.banner`: the uncropped `original`, the `largest` crop, and every crop in `sizes` (`{url, width, height}`).
+
+### `GET /video/related`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `v` | yes | Video ID or full YouTube URL |
+
+Returns `data.related`: the videos YouTube suggests next to the video, each `{position, id, title, link, channel, views, published_time, length, thumbnail}`.
+
+### `GET /video/dislikes`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `v` | yes | Video ID or full YouTube URL |
+
+Returns `data.likes`, `data.dislikes`, `data.rating` and `data.view_count`. YouTube no longer publishes dislikes, so these are estimates (`data.estimated` is always `true`).
 
 ### `GET /playlist`
 
@@ -244,7 +293,7 @@ A `429` response includes `requestsThisMinute` so you can back off accordingly.
 
 ## Pagination
 
-`search`, `playlist`, `channel/search`, and `channel/videos` are all paginated the same way: the first response includes a continuation token (`data.pagination.next_page_token` for `/search`, `data.continuation_token` for the others). Pass that token back on the next call and drop the original query params. A missing/`null` token, or `has_more: false`, means there are no more pages.
+`search`, `playlist`, `channel/search`, `channel/videos`, `channel/playlists`, and `channel/posts` are all paginated the same way: the first response includes a continuation token (`data.pagination.next_page_token` for `/search`, `data.continuation_token` for the others). Pass that token back on the next call and drop the original query params. A missing/`null` token, or `has_more: false`, means there are no more pages.
 
 ## Examples
 
@@ -335,7 +384,7 @@ No. You only need a GetYouTubeTranscript API key, obtained from the dashboard or
 `/transcript` returns whatever captions are available for the video (creator-provided or YouTube auto-captions), in the language you request via `language`. If a video has no captions at all, disabled captions, or no captions in the requested language, the endpoint returns a 404 - there's no audio-transcription fallback.
 
 **How much does it cost?**
-Free: 100 credits, no card required. Monthly: $5 for 1,000 credits/month, top-ups at $2.50/1,000. Annual: $4.50/mo (billed $54/year) for 1,000 credits/month, top-ups at $1.50/1,000 (40% cheaper). 1 credit = 1 successful request; failed and rate-limited requests aren't charged. Several endpoints (`/resolve`, `/channel/latest`, `/credits`) are always free.
+Free: 100 credits, no card required. Monthly: $5 for 1,000 credits/month, top-ups at $2.50/1,000. Annual: $4.50/mo (billed $54/year) for 1,000 credits/month, top-ups at $1.50/1,000 (40% cheaper). 1 credit = 1 successful request; failed and rate-limited requests aren't charged. Only `/credits`, a batch's status and the signup calls are free.
 
 **What are the rate limits?**
 60 requests/minute on the free tier, 200/min on Monthly, 300/min on Annual - see [Rate limits](#rate-limits).
