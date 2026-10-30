@@ -288,6 +288,9 @@ Rate limits are per API key, per plan tier:
 | Free | 60 |
 | Monthly ($5/mo) | 200 |
 | Annual ($4.50/mo) | 300 |
+| Starter ($19/mo) | 300 |
+| Pro ($49/mo) | 400 |
+| Scale ($99/mo) | 600 |
 
 A `429` response includes `requestsThisMinute` so you can back off accordingly.
 
@@ -384,7 +387,7 @@ No. You only need a GetYouTubeTranscript API key, obtained from the dashboard or
 `/transcript` returns whatever captions are available for the video (creator-provided or YouTube auto-captions), in the language you request via `language`. If a video has no captions at all, disabled captions, or no captions in the requested language, the endpoint returns a 404 - there's no audio-transcription fallback.
 
 **How much does it cost?**
-Free: 100 credits, no card required. Monthly: $5 for 1,000 credits/month, top-ups at $2.50/1,000. Annual: $4.50/mo (billed $54/year) for 1,000 credits/month, top-ups at $1.50/1,000 (40% cheaper). 1 credit = 1 successful request; failed and rate-limited requests aren't charged. Only `/credits`, a batch's status and the signup calls are free.
+Free: 100 credits, no card required. Monthly: $5 for 1,000 credits/month, top-ups at $2.50/1,000. Annual: $4.50/mo (billed $54/year) for 1,000 credits/month, top-ups at $1.50/1,000 (40% cheaper). Developer plans: Starter $19 for 7,500 credits/month, Pro $49 for 25,000, Scale $99 for 60,000, all with top-ups at $1.50/1,000. 1 credit = 1 successful request; failed and rate-limited requests aren't charged. Only `/credits`, a batch's status and the signup calls are free.
 
 **What are the rate limits?**
 60 requests/minute on the free tier, 200/min on Monthly, 300/min on Annual - see [Rate limits](#rate-limits).
