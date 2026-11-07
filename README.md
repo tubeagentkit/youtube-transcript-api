@@ -67,6 +67,10 @@ curl "https://getyoutubetranscript.com/api/v1/transcript?v=jNQXAC9IVRw&language=
   -H "Authorization: Bearer sk_live_..."
 ```
 
+### From the terminal
+
+The `gyt` command line wraps the same API: `npm install -g @tubeagentkit/cli`, then `gyt login` and `gyt transcript <url>`. See [tubeagentkit/youtube-transcript-cli](https://github.com/tubeagentkit/youtube-transcript-cli).
+
 ## Response example
 
 ```json
