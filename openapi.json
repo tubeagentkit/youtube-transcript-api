@@ -68,6 +68,11 @@
             "type": "integer",
             "description": "Top-up credits remaining. Present on 402 PAYMENT_REQUIRED."
           },
+          "upgradeUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Where to buy a top-up or a bigger plan. Present on 402 PAYMENT_REQUIRED."
+          },
           "requestsThisMinute": {
             "type": "integer",
             "description": "Requests counted in the current minute. Present on 429 RATE_LIMITED."
@@ -363,15 +368,22 @@
         "required": [
           "plan_credits_left",
           "topup_credits_left",
+          "total_credits_left",
           "plan",
           "rate_limit_per_minute"
         ],
         "properties": {
           "plan_credits_left": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Unused credits from this billing period's plan allowance. Resets to the plan's monthly amount on renewal."
           },
           "topup_credits_left": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Unused credits from purchased top-up batches. Spent only after plan_credits_left reaches 0; carries over between renewals until it expires."
+          },
+          "total_credits_left": {
+            "type": "integer",
+            "description": "plan_credits_left + topup_credits_left - the actual number of calls this key can still make. Use this, not plan_credits_left alone, to decide whether the key is out of credits."
           },
           "plan": {
             "type": "string"
@@ -1043,9 +1055,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -1208,9 +1221,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -1415,9 +1429,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -1555,9 +1570,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -1609,7 +1625,7 @@
       "get": {
         "operationId": "getCredits",
         "summary": "Check the remaining credit balance for this key",
-        "description": "Free (0 credits) - still requires an API key and is still rate-limited. Same data the MCP get_credits tool returns.",
+        "description": "Free (0 credits) - still requires an API key and is still rate-limited. Same data the MCP get_credits tool returns. Credits come from two separate buckets - plan_credits_left (this period's plan allowance) and topup_credits_left (purchased top-ups, spent only once the plan allowance is 0) - so check total_credits_left, not plan_credits_left alone, for the real spendable balance.",
         "x-credit-cost": 0,
         "parameters": [],
         "responses": {
@@ -1638,8 +1654,9 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "plan_credits_left": 87,
-                    "topup_credits_left": 0,
+                    "plan_credits_left": 0,
+                    "topup_credits_left": 87,
+                    "total_credits_left": 87,
                     "plan": "monthly",
                     "rate_limit_per_minute": 200
                   }
@@ -1823,9 +1840,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -1964,9 +1982,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -2140,9 +2159,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -2326,9 +2346,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -2492,9 +2513,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -2660,9 +2682,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -2822,9 +2845,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -2980,9 +3004,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -3134,9 +3159,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
@@ -3495,9 +3521,10 @@
                     "value": {
                       "success": false,
                       "code": "PAYMENT_REQUIRED",
-                      "message": "You have used all your credits. Buy a top-up or upgrade your plan.",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
-                      "topupCreditsLeft": 0
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
                 }
