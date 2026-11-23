@@ -37,6 +37,8 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 | `GET` | `/channel/banner` | 1 | A channel's banner (uncropped, plus every crop size) and avatar |
 | `GET` | `/video/related` | 1 | The videos YouTube suggests next to a video |
 | `GET` | `/video/dislikes` | 1 | A video's estimated likes and dislikes |
+| `GET` | `/video` | 1 | A video's details: views, likes, upload date, duration, tags |
+| `GET` | `/video/comments` | 1 / page | A page of a video's top comments |
 | `GET` | `/playlist` | 1 | List every video in a playlist, paginated |
 | `GET` | `/credits` | free | Check remaining credit balance, plan, and rate limit |
 | `POST` | `/signup` | free | Self-serve signup step 1: email a 6-digit OTP |
@@ -252,6 +254,23 @@ Returns `data.related`: the videos YouTube suggests next to the video, each `{po
 | `v` | yes | Video ID or full YouTube URL |
 
 Returns `data.likes`, `data.dislikes`, `data.rating` and `data.view_count`. YouTube no longer publishes dislikes, so these are estimates (`data.estimated` is always `true`).
+
+### `GET /video`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `v` | yes | Video ID or full YouTube URL |
+
+Returns `data.title`, `data.description`, `data.channel` (`id`, `name`, `subscribers`, `thumbnail`), `data.views` (exact, a digit string), `data.likes` (YouTube's rounded label, e.g. `"19M"`), `data.upload_date`, `data.duration` (seconds), `data.thumbnails` and `data.keywords` (the video's tags). A missing or private video is a 404 `VIDEO_UNAVAILABLE`.
+
+### `GET /video/comments`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `v` | yes | Video ID or full YouTube URL, on every page |
+| `continuation` | no | `data.continuation_token` from the previous page, sent with the same `v` |
+
+Returns `data.comments` (each `{comment_id, link, channel, published_date, text, likes, replies}`), `data.has_more` and `data.continuation_token` (`null` on the last page). 1 credit per page. A 404 `COMMENTS_DISABLED` means comments are turned off or the video does not exist.
 
 ### `GET /playlist`
 

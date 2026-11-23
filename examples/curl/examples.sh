@@ -103,6 +103,18 @@ video_dislikes() {
     "${BASE_URL}/video/dislikes"
 }
 
+video_details() {
+  run "GET /video" "${auth_header[@]}" \
+    -G --data-urlencode "v=dQw4w9WgXcQ" \
+    "${BASE_URL}/video"
+}
+
+video_comments() {
+  run "GET /video/comments" "${auth_header[@]}" \
+    -G --data-urlencode "v=dQw4w9WgXcQ" \
+    "${BASE_URL}/video/comments"
+}
+
 channel_search() {
   run "GET /channel/search" "${auth_header[@]}" \
     -G --data-urlencode "channel=@mkbhd" --data-urlencode "q=iphone" \
@@ -143,6 +155,8 @@ case "${1:-all}" in
   channel_banner) channel_banner ;;
   video_related) video_related ;;
   video_dislikes) video_dislikes ;;
+  video_details) video_details ;;
+  video_comments) video_comments ;;
   playlist) playlist ;;
   credits) credits ;;
   signup) signup_flow ;;
@@ -161,6 +175,8 @@ case "${1:-all}" in
     channel_banner
     video_related
     video_dislikes
+    video_details
+    video_comments
     playlist
     credits
     signup_flow

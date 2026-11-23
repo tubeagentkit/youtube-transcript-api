@@ -798,6 +798,162 @@
           }
         }
       },
+      "VideoDetails": {
+        "type": "object",
+        "required": [
+          "video_id",
+          "title"
+        ],
+        "properties": {
+          "video_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "channel": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "subscribers": {
+                "type": "string",
+                "description": "Rounded label as YouTube shows it, e.g. \"4.56M subscribers\"."
+              },
+              "thumbnail": {
+                "type": "string"
+              }
+            }
+          },
+          "views": {
+            "type": "string",
+            "description": "Exact view count as a digit string."
+          },
+          "likes": {
+            "type": "string",
+            "description": "Rounded label as YouTube shows it, e.g. \"19M\"."
+          },
+          "upload_date": {
+            "type": "string",
+            "description": "As YouTube shows it, e.g. \"Oct 24, 2009\"."
+          },
+          "duration": {
+            "type": "integer",
+            "description": "Length in seconds."
+          },
+          "duration_formatted": {
+            "type": "string"
+          },
+          "thumbnails": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "integer"
+                },
+                "height": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "is_live": {
+            "type": "boolean"
+          },
+          "is_private": {
+            "type": "boolean"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The video's tags."
+          }
+        }
+      },
+      "VideoCommentsPage": {
+        "type": "object",
+        "required": [
+          "video_id",
+          "comments",
+          "has_more"
+        ],
+        "properties": {
+          "video_id": {
+            "type": "string"
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "comment_id",
+                "text"
+              ],
+              "properties": {
+                "comment_id": {
+                  "type": "string"
+                },
+                "link": {
+                  "type": "string"
+                },
+                "channel": {
+                  "type": "object",
+                  "description": "The commenter.",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "handle": {
+                      "type": "string"
+                    },
+                    "link": {
+                      "type": "string"
+                    },
+                    "thumbnail": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "published_date": {
+                  "type": "string",
+                  "description": "Relative, as YouTube shows it, e.g. \"7 years ago (edited)\"."
+                },
+                "text": {
+                  "type": "string"
+                },
+                "likes": {
+                  "type": "string",
+                  "description": "Rounded label, e.g. \"73K\"."
+                },
+                "replies": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "continuation_token": {
+            "type": "string",
+            "nullable": true,
+            "description": "Opaque cursor for the next page, null when there is none. Pass it back as page_token or continuation. Expires after 24 hours."
+          }
+        }
+      },
       "ChannelLatest": {
         "type": "object",
         "required": [
@@ -3171,6 +3327,345 @@
           },
           "404": {
             "description": "Video not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video": {
+      "get": {
+        "operationId": "getVideoDetails",
+        "summary": "Get a video's details",
+        "description": "Costs 1 credit per successful call. Title, description, channel (with subscriber label), views, likes, upload date, duration, thumbnails and tags. views is an exact digit string; likes and subscribers are the rounded labels YouTube shows. Remembered for an hour.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "v",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "YouTube video ID or full URL."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The video details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/VideoDetails"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "video_id": "dQw4w9WgXcQ",
+                    "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+                    "description": "The official video for “Never Gonna Give You Up” by Rick Astley...",
+                    "channel": {
+                      "id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+                      "name": "Rick Astley",
+                      "subscribers": "4.56M subscribers"
+                    },
+                    "views": "1840125263",
+                    "likes": "19M",
+                    "upload_date": "Oct 24, 2009",
+                    "duration": 213,
+                    "duration_formatted": "3:33",
+                    "is_live": false,
+                    "is_private": false,
+                    "keywords": [
+                      "rick astley",
+                      "Never Gonna Give You Up"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Video not found, private, or deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/video/comments": {
+      "get": {
+        "operationId": "getVideoComments",
+        "summary": "Get a page of a video's comments",
+        "description": "Costs 1 credit per successful page. Top comments first: text, commenter, likes, reply count and age. For the next page pass the same 'v' plus 'continuation' (the previous response's data.continuation_token); has_more is false on the last page. A 404 COMMENTS_DISABLED means comments are turned off or the video does not exist.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "v",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "YouTube video ID or full URL."
+          },
+          {
+            "name": "continuation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Short opaque cursor (data.continuation_token) from the previous page. Expires after 24 hours; a 400 CURSOR_EXPIRED means start again from the first page."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of the video's comments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/VideoCommentsPage"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "video_id": "dQw4w9WgXcQ",
+                    "comments": [
+                      {
+                        "comment_id": "UgzKYksqeQ5gA3t0g0F4AaABAg",
+                        "link": "https://www.youtube.com/watch?v=dQw4w9WgXcQ&lc=UgzKYksqeQ5gA3t0g0F4AaABAg",
+                        "channel": {
+                          "id": "UCKrzgYonJnMd0Dk7zQXjYXw",
+                          "handle": "@grustache4569"
+                        },
+                        "published_date": "7 years ago (edited)",
+                        "text": "I Rick rolled my entire French class...",
+                        "likes": "109K",
+                        "replies": 740
+                      }
+                    ],
+                    "has_more": true,
+                    "continuation_token": "c_DfE9mQx2Ln8TbW4kJ1pZsA"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Comments are turned off for this video, or the video does not exist (COMMENTS_DISABLED).",
             "content": {
               "application/json": {
                 "schema": {
