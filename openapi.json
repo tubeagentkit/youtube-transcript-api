@@ -3,7 +3,7 @@
   "info": {
     "title": "GetYouTubeTranscript API",
     "version": "1.0.0",
-    "description": "YouTube transcripts, search, channel, and playlist data. Every request needs an API key, obtained from the dashboard or via the self-service /v1/signup flow. 1 credit = 1 successful request; failed and rate-limited requests are never charged. See https://getyoutubetranscript.com/docs for full human-readable docs and https://getyoutubetranscript.com/youtube-mcp-server for the MCP server.",
+    "description": "YouTube transcripts, search, channel, and playlist data. Every request needs an API key, obtained from the dashboard or via the self-service /v1/signup flow. 1 credit = 1 successful request, except AI transcripts for videos with no captions (GET /transcript with mode=generate|auto), which cost 3 credits per minute of video; failed and rate-limited requests are never charged. See https://getyoutubetranscript.com/docs for full human-readable docs and https://getyoutubetranscript.com/youtube-mcp-server for the MCP server.",
     "contact": {
       "url": "https://getyoutubetranscript.com/contact"
     },
@@ -76,6 +76,13 @@
           "requestsThisMinute": {
             "type": "integer",
             "description": "Requests counted in the current minute. Present on 429 RATE_LIMITED."
+          },
+          "credits_required": {
+            "type": "integer",
+            "description": "Credits an AI transcript needs. Present on 402 PAYMENT_REQUIRED for mode=generate|auto."
+          },
+          "job": {
+            "$ref": "#/components/schemas/AiTranscriptJob"
           }
         },
         "required": [
@@ -119,10 +126,11 @@
             "enum": [
               "manual",
               "auto",
+              "ai",
               null
             ],
             "nullable": true,
-            "description": "Creator captions or speech recognition. Null when unknown."
+            "description": "'manual' (creator captions), 'auto' (YouTube speech recognition), or 'ai' (our AI speech-to-text transcript, mode=generate|auto only). Null when unknown."
           },
           "title": {
             "type": "string"
@@ -172,6 +180,75 @@
                 "text": {
                   "type": "string"
                 }
+              }
+            }
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai"
+            ],
+            "description": "Present only on AI transcripts (mode=generate|auto when the video has no captions): always 'ai'."
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "description": "Video length in seconds. Present only on AI transcripts; the cost is based on it."
+          }
+        }
+      },
+      "AiTranscriptJob": {
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "video_id",
+          "credits_charged",
+          "poll_url",
+          "poll_interval_seconds",
+          "created_at"
+        ],
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed"
+            ]
+          },
+          "video_id": {
+            "type": "string"
+          },
+          "credits_charged": {
+            "type": "integer",
+            "description": "Credits taken when the job started. Refunded automatically if it fails."
+          },
+          "poll_url": {
+            "type": "string",
+            "description": "Path to poll: /api/v1/transcript/jobs?id=<job_id>."
+          },
+          "poll_interval_seconds": {
+            "type": "integer",
+            "description": "How long to wait between polls (5)."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "error": {
+            "type": "object",
+            "description": "Present only when status is 'failed'.",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
               }
             }
           }
@@ -1040,7 +1117,7 @@
       "get": {
         "operationId": "getTranscript",
         "summary": "Get a YouTube video transcript",
-        "description": "Full transcript for one video, plus title/author/thumbnail metadata. One block of text by default; add 'timestamps=true' to also get 'segments', one {start, duration, text} per caption line (times in seconds). Same credit cost either way. Provenance: language_code is the caption track actually returned and can differ from requested_language (YouTube falls back to the track it has); caption_type is 'manual' (creator-uploaded) or 'auto' (speech recognition), null when unknown for older transcripts; cached says whether it came from our stored copy, fetched at fetched_at. Failed requests (no captions, unavailable video) are never charged.",
+        "description": "Full transcript for one video, plus title/author/thumbnail metadata. One block of text by default; add 'timestamps=true' to also get 'segments', one {start, duration, text} per caption line (times in seconds). Same credit cost either way. Provenance: language_code is the caption track actually returned and can differ from requested_language (YouTube falls back to the track it has); caption_type is 'manual' (creator-uploaded) or 'auto' (speech recognition), null when unknown for older transcripts; cached says whether it came from our stored copy, fetched at fetched_at. Failed requests (no captions, unavailable video) are never charged. AI transcripts for videos with no captions: set mode=auto (captions when the video has them, otherwise AI) or mode=generate (always AI). An AI transcript costs 3 credits per minute of video, rounded up, minimum 3; the X-Credits-Charged response header says what the call cost. Reading your own AI transcript again within 24 hours costs 0. Credits are taken when generation starts and refunded automatically if it fails. If generation takes longer than about 20 seconds the answer is 202 with a job; poll GET /transcript/jobs?id=<job_id> every 5 seconds (free). Videos up to 4 hours; live and upcoming streams are refused.",
         "x-credit-cost": 1,
         "parameters": [
           {
@@ -1080,7 +1157,22 @@
               "type": "string",
               "pattern": "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$"
             },
-            "description": "Language code to machine-translate the transcript into, e.g. 'es', 'de', 'zh-CN'. Each caption line is translated in place, so timestamps stay aligned. The response adds 'translated_to'; 'language_code' stays the source track. Same 1-credit cost."
+            "description": "Language code to machine-translate the transcript into, e.g. 'es', 'de', 'zh-CN'. Each caption line is translated in place, so timestamps stay aligned. The response adds 'translated_to'; 'language_code' stays the source track. Same 1-credit cost. Cannot be combined with mode=generate or mode=auto."
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "native",
+                "generate",
+                "auto"
+              ],
+              "default": "native"
+            },
+            "description": "'native': captions only (1 credit). 'auto': captions if the video has any (1 credit), otherwise an AI speech-to-text transcript. 'generate': always an AI transcript. AI transcripts cost 3 credits per minute of video (rounded up, minimum 3). With an AI mode, 'language' is the language spoken; omit it to use the video's own audio language."
           }
         ],
         "responses": {
@@ -1158,6 +1250,97 @@
                         ]
                       }
                     }
+                  },
+                  "aiTranscript": {
+                    "summary": "AI transcript (mode=generate, or mode=auto on a video with no captions)",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "video_id": "jNQXAC9IVRw",
+                        "language_code": "en",
+                        "requested_language": "en",
+                        "caption_type": "ai",
+                        "title": "Me at the zoo",
+                        "author_name": "jawed",
+                        "author_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PVoOGeMg",
+                        "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
+                        "transcript": "All right, so here we are, in front of the elephants...",
+                        "word_count": 39,
+                        "fetched_at": "2026-09-20T03:10:58.938Z",
+                        "source": "ai",
+                        "duration_seconds": 19
+                      },
+                      "job": {
+                        "job_id": "6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                        "status": "done",
+                        "video_id": "jNQXAC9IVRw",
+                        "credits_charged": 3,
+                        "poll_url": "/api/v1/transcript/jobs?id=6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                        "poll_interval_seconds": 5,
+                        "created_at": "2026-09-20T03:10:58.938Z"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Credits-Charged": {
+                "description": "Credits this call took. Sent on mode=generate|auto answers (1 for captions, 3 per minute for an AI transcript, 0 for a re-read within 24 hours).",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "mode=generate|auto only: the AI transcript is still being made. data is null; poll job.poll_url (GET /transcript/jobs) until it answers 200.",
+            "headers": {
+              "X-Credits-Charged": {
+                "description": "Credits this call took. Sent on mode=generate|auto answers (1 for captions, 3 per minute for an AI transcript, 0 for a re-read within 24 hours).",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data",
+                    "job"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "nullable": true,
+                      "enum": [
+                        null
+                      ]
+                    },
+                    "job": {
+                      "$ref": "#/components/schemas/AiTranscriptJob"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": null,
+                  "job": {
+                    "job_id": "6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                    "status": "running",
+                    "video_id": "jNQXAC9IVRw",
+                    "credits_charged": 3,
+                    "poll_url": "/api/v1/transcript/jobs?id=6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                    "poll_interval_seconds": 5,
+                    "created_at": "2026-09-20T03:10:58.938Z"
                   }
                 }
               }
@@ -1200,7 +1383,7 @@
             }
           },
           "402": {
-            "description": "Out of credits.",
+            "description": "Out of credits. For an AI transcript, also when the balance can't cover its cost; credits_required says how many it needs.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1214,6 +1397,15 @@
                       "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
                       "creditsLeft": 0,
                       "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
+                    }
+                  },
+                  "aiTranscript": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
+                      "credits_required": 12,
                       "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
                     }
                   }
@@ -1231,8 +1423,18 @@
               }
             }
           },
+          "422": {
+            "description": "LIVE_STREAM (live or upcoming stream), TOO_LONG (over 4 hours) or AUDIO_UNAVAILABLE (the audio could not be read). Not charged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "429": {
-            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself. With mode=generate|auto, also TOO_MANY_JOBS: 5 AI transcripts already in progress, or too many failed today.",
             "headers": {
               "Retry-After": {
                 "description": "Seconds until the rate-limit window resets.",
@@ -1255,6 +1457,218 @@
                       "requestsThisMinute": 61
                     }
                   }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "AI_FAILED: the transcript could not be generated. Credits are refunded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transcript/jobs": {
+      "get": {
+        "operationId": "getTranscriptJob",
+        "summary": "Status or result of an AI transcript job",
+        "description": "Poll this with the job_id from a 202 answer of GET /transcript?mode=generate|auto. Answers 200 with the transcript when the job is done, 202 while it is queued or running, or the job's error (e.g. AI_FAILED, AUDIO_UNAVAILABLE) when it failed; credits are refunded then. Free: the credits were taken when the job started. Only the account that started a job can read it. Jobs are kept 7 days.",
+        "x-credit-cost": 0,
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The job_id."
+          },
+          {
+            "name": "timestamps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Set to 'true' to include 'segments' in the finished transcript."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done: the AI transcript plus the job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data",
+                    "job"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Transcript"
+                    },
+                    "job": {
+                      "$ref": "#/components/schemas/AiTranscriptJob"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "video_id": "jNQXAC9IVRw",
+                    "language_code": "en",
+                    "requested_language": "en",
+                    "caption_type": "ai",
+                    "title": "Me at the zoo",
+                    "author_name": "jawed",
+                    "author_url": "https://www.youtube.com/channel/UC4QobU6STFB0P71PVoOGeMg",
+                    "thumbnail_url": "https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg",
+                    "transcript": "All right, so here we are, in front of the elephants...",
+                    "word_count": 39,
+                    "fetched_at": "2026-09-20T03:10:58.938Z",
+                    "source": "ai",
+                    "duration_seconds": 19
+                  },
+                  "job": {
+                    "job_id": "6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                    "status": "done",
+                    "video_id": "jNQXAC9IVRw",
+                    "credits_charged": 3,
+                    "poll_url": "/api/v1/transcript/jobs?id=6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                    "poll_interval_seconds": 5,
+                    "created_at": "2026-09-20T03:10:58.938Z"
+                  }
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Still queued or running. Wait poll_interval_seconds and poll again.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": null,
+                  "job": {
+                    "job_id": "6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                    "status": "running",
+                    "video_id": "jNQXAC9IVRw",
+                    "credits_charged": 3,
+                    "poll_url": "/api/v1/transcript/jobs?id=6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+                    "poll_interval_seconds": 5,
+                    "created_at": "2026-09-20T03:10:58.938Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JOB_NOT_FOUND: no job with this id for this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "LIVE_STREAM (live or upcoming stream), TOO_LONG (over 4 hours) or AUDIO_UNAVAILABLE (the audio could not be read). Not charged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself. With mode=generate|auto, also TOO_MANY_JOBS: 5 AI transcripts already in progress, or too many failed today.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "AI_FAILED: the transcript could not be generated. Credits are refunded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }

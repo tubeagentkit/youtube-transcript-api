@@ -8,6 +8,8 @@
 #   ./examples.sh
 # Run one:
 #   ./examples.sh transcript
+# Poll an AI transcript job (job_id from a 202 answer of transcript_ai):
+#   ./examples.sh transcript_job <job_id>
 
 set -euo pipefail
 
@@ -35,6 +37,37 @@ transcript() {
 transcript_timestamps() {
   run "GET /transcript (with segments)" "${auth_header[@]}" \
     "${BASE_URL}/transcript?v=jNQXAC9IVRw&language=en&timestamps=true"
+}
+
+transcript_ai() {
+  # AI speech-to-text transcript: 3 credits per minute of video (min 3).
+  # mode=auto uses captions when the video has them (1 credit).
+  # A 200 has the transcript; a 202 has a job to poll with transcript_job.
+  echo "=== GET /transcript (mode=generate) ==="
+  curl -sS -D - "${auth_header[@]}" \
+    "${BASE_URL}/transcript?v=jNQXAC9IVRw&mode=generate" | grep -i -E '^(HTTP|x-credits-charged)|^\{' || true
+  echo
+}
+
+transcript_job() {
+  local job_id="${1:-${GYT_JOB_ID:-}}"
+  if [ -z "$job_id" ]; then
+    echo "=== GET /transcript/jobs ==="
+    echo "Pass a job_id from a 202 answer: ./examples.sh transcript_job <job_id> (or set GYT_JOB_ID). Skipped."
+    echo
+    return
+  fi
+  # Free. 202 while queued or running, 200 when done, an error if it failed.
+  local code
+  for _ in $(seq 1 60); do
+    code=$(curl -sS -o /tmp/gyt-job.json -w '%{http_code}' "${auth_header[@]}" \
+      "${BASE_URL}/transcript/jobs?id=${job_id}")
+    [ "$code" = "202" ] || break
+    sleep 5
+  done
+  echo "=== GET /transcript/jobs (HTTP ${code}) ==="
+  python3 -m json.tool /tmp/gyt-job.json 2>/dev/null || cat /tmp/gyt-job.json
+  echo
 }
 
 search_videos() {
@@ -143,6 +176,8 @@ signup_flow() {
 case "${1:-all}" in
   transcript) transcript ;;
   transcript_timestamps) transcript_timestamps ;;
+  transcript_ai) transcript_ai ;;
+  transcript_job) transcript_job "${2:-}" ;;
   search) search_videos ;;
   search_channels) search_channels ;;
   resolve) resolve_channel ;;
@@ -163,6 +198,8 @@ case "${1:-all}" in
   all)
     transcript
     transcript_timestamps
+    transcript_ai
+    transcript_job
     search_videos
     search_channels
     resolve_channel

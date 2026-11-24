@@ -23,7 +23,8 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 
 | Method | Path | Credits | Description |
 | --- | --- | --- | --- |
-| `GET` | `/transcript` | 1 | Full transcript for one video, plus title/author/thumbnail and caption provenance. Optional per-line timestamps with `timestamps=true` |
+| `GET` | `/transcript` | 1 (AI: 3 per minute) | Full transcript for one video, plus title/author/thumbnail and caption provenance. Optional per-line timestamps with `timestamps=true`. `mode=auto` or `mode=generate` makes an AI transcript for videos with no captions |
+| `GET` | `/transcript/jobs` | free | Status or result of an AI transcript job |
 | `GET` | `/transcript/languages` | 1 credit | A video's caption languages (manual or auto-generated) and which one a default request returns |
 | `POST` | `/batch` | 1 per successful video | Queue up to 100 videos at once; results by polling or a signed webhook |
 | `GET` | `/batch` | free | Batch status and a page of results |
@@ -99,7 +100,7 @@ The `gyt` command line wraps the same API: `npm install -g @tubeagentkit/cli`, t
 | --- | --- |
 | `language_code` | The caption track actually returned |
 | `requested_language` | What you asked for. If it differs from `language_code`, YouTube didn't have that language |
-| `caption_type` | `manual` (uploaded by the creator), `auto` (YouTube speech recognition), or `null` if unknown |
+| `caption_type` | `manual` (uploaded by the creator), `auto` (YouTube speech recognition), `ai` (our AI transcript, see [AI transcripts](#ai-transcripts-for-videos-without-captions)), or `null` if unknown |
 | `cached` | `true` when served from the stored copy rather than fetched from YouTube just now |
 | `fetched_at` | ISO 8601 time it was fetched from YouTube |
 
@@ -126,6 +127,59 @@ curl "https://getyoutubetranscript.com/api/v1/transcript?v=5e37ZT3SQbk&language=
 
 The other fields are the same as above (shortened here). Without `timestamps=true` there is no `segments` key. It costs the same 1 credit.
 
+## AI transcripts for videos without captions
+
+Some videos have no captions at all. Add `mode` to `/transcript` to get an AI speech-to-text transcript instead of a 404:
+
+| `mode` | What you get | Cost |
+| --- | --- | --- |
+| `native` (default) | Captions only | 1 credit |
+| `auto` | Captions if the video has any, otherwise an AI transcript | 1 credit for captions, AI price otherwise |
+| `generate` | Always an AI transcript | AI price |
+
+The AI price is 3 credits per minute of video, rounded up, minimum 3 (a 10 minute 30 second video costs 33 credits). Videos up to 4 hours; live and upcoming streams are refused. With an AI mode, `language` is the language spoken in the video; leave it out to use the video's own audio language. `translate` can't be combined with `mode=auto` or `mode=generate`.
+
+- Every `mode=auto|generate` answer has an `X-Credits-Charged` header with what the call cost.
+- Reading your own AI transcript again within 24 hours costs 0.
+- Credits are taken when the AI transcript starts and refunded automatically if it fails.
+
+A short video usually answers `200` straight away, with `caption_type: "ai"`, `source: "ai"` and `duration_seconds` added to `data`. A longer one answers `202` with a job to poll:
+
+```json
+{
+  "success": true,
+  "data": null,
+  "job": {
+    "job_id": "6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+    "status": "running",
+    "video_id": "jNQXAC9IVRw",
+    "credits_charged": 3,
+    "poll_url": "/api/v1/transcript/jobs?id=6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c",
+    "poll_interval_seconds": 5,
+    "created_at": "2026-09-20T03:10:58.938Z"
+  }
+}
+```
+
+Poll `GET /transcript/jobs?id=<job_id>` every `poll_interval_seconds` (5). Polling is free and only the account that started the job can read it. It answers `202` while the job is `queued` or `running`, `200` with the transcript in `data` when it is `done`, or the job's error (for example `502 AI_FAILED`) when it failed. Add `timestamps=true` to the poll to get `segments`. Jobs are kept 7 days.
+
+```bash
+# Start (or reuse) an AI transcript
+curl -i "https://getyoutubetranscript.com/api/v1/transcript?v=jNQXAC9IVRw&mode=generate" \
+  -H "Authorization: Bearer $GYT_API_KEY"
+
+# If that answered 202, poll the job until it answers 200
+JOB_ID=6f1c2b0e-8a4d-4c1e-9b7a-2d3e4f5a6b7c
+while :; do
+  code=$(curl -s -o job.json -w '%{http_code}' \
+    "https://getyoutubetranscript.com/api/v1/transcript/jobs?id=$JOB_ID" \
+    -H "Authorization: Bearer $GYT_API_KEY")
+  [ "$code" = "202" ] || break
+  sleep 5
+done
+cat job.json
+```
+
 ## Parameters
 
 ### `GET /transcript`
@@ -135,6 +189,17 @@ The other fields are the same as above (shortened here). Without `timestamps=tru
 | `v` | yes | YouTube video URL (full or short) or an 11-character video ID |
 | `language` | no | Caption language code, e.g. `en`, `es` (default `en`) |
 | `timestamps` | no | Set to `true` to also return `data.segments`: one `{start, duration, text}` per caption line, times in seconds. Same 1 credit. |
+| `translate` | no | Language code to translate the transcript into, e.g. `es`. Not with `mode=auto` or `mode=generate` |
+| `mode` | no | `native` (default, captions only), `auto` (captions, else AI) or `generate` (always AI). See [AI transcripts](#ai-transcripts-for-videos-without-captions) |
+
+### `GET /transcript/jobs`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `id` | yes | The `job_id` from a `202` answer of `/transcript` |
+| `timestamps` | no | `true` to include `segments` in the finished transcript |
+
+Free. Answers `202` while the job runs, `200` with `data` and `job` when it is done, or the job's error when it failed. `404 JOB_NOT_FOUND` if the id doesn't belong to your account.
 
 ### `GET /transcript/languages`
 
@@ -294,13 +359,17 @@ Every error response has this shape:
 | 400 | `BAD_REQUEST` / endpoint-specific codes (e.g. `MISSING_URL`, `INVALID_URL`) | Missing or invalid parameters |
 | 401 | `MISSING_API_KEY` | No key provided in `Authorization: Bearer` or `x-api-key` |
 | 401 | `INVALID_API_KEY` | Key is invalid or has been revoked |
-| 402 | `PAYMENT_REQUIRED` | Out of credits - response includes `creditsLeft` and `topupCreditsLeft` |
+| 402 | `PAYMENT_REQUIRED` | Out of credits - response includes `creditsLeft` and `topupCreditsLeft`. For an AI transcript, also when the balance can't cover it; `credits_required` says how many it needs |
 | 404 | endpoint-specific (e.g. video/channel/playlist not found, no captions available) | Resource doesn't exist or has no transcript |
+| 404 | `JOB_NOT_FOUND` | No AI transcript job with this id for your account |
+| 422 | `LIVE_STREAM` / `TOO_LONG` / `AUDIO_UNAVAILABLE` | AI transcripts only: a live or upcoming stream, a video over 4 hours, or audio that could not be read |
 | 429 | `RATE_LIMITED` | Rate limit exceeded for your plan tier - response includes `requestsThisMinute` |
 | 429 | `TOO_MANY_BATCHES` | 5 batches still running for this account - wait for one to finish |
+| 429 | `TOO_MANY_JOBS` | 5 AI transcripts already in progress, or too many failed today |
 | 500 | `INTERNAL_ERROR` | Something broke on our end |
+| 502 | `AI_FAILED` | The AI transcript could not be made. Credits are refunded |
 
-Failed and rate-limited requests are never charged a credit - only a successful (2xx) response consumes one. For batches, only videos that return a transcript are charged.
+Failed and rate-limited requests are never charged a credit - only a successful (2xx) response consumes one. For batches, only videos that return a transcript are charged. AI transcript credits are refunded automatically if the job fails.
 
 ## Rate limits
 
@@ -407,10 +476,10 @@ Not for arbitrary videos. The official YouTube Data API has a `captions.download
 No. You only need a GetYouTubeTranscript API key, obtained from the dashboard or the self-serve `/signup` + `/signup/verify` flow. No Google Cloud project, no OAuth.
 
 **Does it work for videos without captions?**
-`/transcript` returns whatever captions are available for the video (creator-provided or YouTube auto-captions), in the language you request via `language`. If a video has no captions at all, disabled captions, or no captions in the requested language, the endpoint returns a 404 - there's no audio-transcription fallback.
+`/transcript` returns whatever captions are available for the video (creator-provided or YouTube auto-captions), in the language you request via `language`. By default, if a video has no captions at all, disabled captions, or no captions in the requested language, the endpoint returns a 404. Add `mode=auto` (captions if any, otherwise AI) or `mode=generate` (always AI) to get an AI speech-to-text transcript instead, at 3 credits per minute of video. See [AI transcripts](#ai-transcripts-for-videos-without-captions).
 
 **How much does it cost?**
-Free: 100 credits, no card required. Monthly: $5 for 1,000 credits/month, top-ups at $2.50/1,000. Annual: $4.50/mo (billed $54/year) for 1,000 credits/month, top-ups at $1.50/1,000 (40% cheaper). Developer plans: Starter $19 for 7,500 credits/month, Pro $49 for 25,000, Scale $99 for 60,000, all with top-ups at $1.50/1,000. 1 credit = 1 successful request; failed and rate-limited requests aren't charged. Only `/credits`, a batch's status and the signup calls are free.
+Free: 100 credits, no card required. Monthly: $5 for 1,000 credits/month, top-ups at $2.50/1,000. Annual: $4.50/mo (billed $54/year) for 1,000 credits/month, top-ups at $1.50/1,000 (40% cheaper). Developer plans: Starter $19 for 7,500 credits/month, Pro $49 for 25,000, Scale $99 for 60,000, all with top-ups at $1.50/1,000. 1 credit = 1 successful request; failed and rate-limited requests aren't charged. AI transcripts for videos without captions cost 3 credits per minute of video (minimum 3). Only `/credits`, a batch's status, AI job polling and the signup calls are free.
 
 **What are the rate limits?**
 60 requests/minute on the free tier, 200/min on Monthly, 300/min on Annual - see [Rate limits](#rate-limits).
