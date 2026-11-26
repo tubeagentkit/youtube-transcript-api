@@ -148,6 +148,12 @@ video_comments() {
     "${BASE_URL}/video/comments"
 }
 
+tiktok_transcript() {
+  run "GET /tiktok/transcript" "${auth_header[@]}" \
+    -G --data-urlencode "url=https://www.tiktok.com/@thedailybugleofficial/video/7039900146041343278" \
+    "${BASE_URL}/tiktok/transcript"
+}
+
 channel_search() {
   run "GET /channel/search" "${auth_header[@]}" \
     -G --data-urlencode "channel=@mkbhd" --data-urlencode "q=iphone" \
@@ -192,6 +198,7 @@ case "${1:-all}" in
   video_dislikes) video_dislikes ;;
   video_details) video_details ;;
   video_comments) video_comments ;;
+  tiktok_transcript) tiktok_transcript ;;
   playlist) playlist ;;
   credits) credits ;;
   signup) signup_flow ;;
@@ -214,6 +221,7 @@ case "${1:-all}" in
     video_dislikes
     video_details
     video_comments
+    tiktok_transcript
     playlist
     credits
     signup_flow

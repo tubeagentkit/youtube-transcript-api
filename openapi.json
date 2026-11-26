@@ -1031,6 +1031,53 @@
           }
         }
       },
+      "TikTokTranscript": {
+        "type": "object",
+        "required": [
+          "video_id",
+          "segments"
+        ],
+        "properties": {
+          "video_id": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string",
+            "description": "The uploader's TikTok username."
+          },
+          "description": {
+            "type": "string",
+            "description": "The video caption text, up to 500 characters."
+          },
+          "language": {
+            "type": "string",
+            "description": "Caption language code as TikTok reports it, e.g. \"eng-US\"."
+          },
+          "auto_generated": {
+            "type": "boolean",
+            "description": "true when TikTok generated the captions automatically."
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "start",
+                "text"
+              ],
+              "properties": {
+                "start": {
+                  "type": "number",
+                  "description": "Seconds from the start."
+                },
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
       "ChannelLatest": {
         "type": "object",
         "required": [
@@ -4080,6 +4127,164 @@
           },
           "404": {
             "description": "Comments are turned off for this video, or the video does not exist (COMMENTS_DISABLED).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded for the key's plan tier (60/200/300 requests per minute on free/monthly/annual). Wait the number of seconds in the Retry-After header; every response also carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset (seconds until the minute window ends) so a client can pace itself.",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the rate-limit window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "rateLimited": {
+                    "value": {
+                      "success": false,
+                      "code": "RATE_LIMITED",
+                      "message": "Rate limit exceeded for your plan tier.",
+                      "requestsThisMinute": 61
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tiktok/transcript": {
+      "get": {
+        "operationId": "getTikTokTranscript",
+        "summary": "Get a TikTok video's transcript",
+        "description": "Costs 1 credit per successful call. The captions as timed segments, plus the author, description and caption language. Remembered for 7 days. A TikTok without captions is a 404 and is not charged.",
+        "x-credit-cost": 1,
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "TikTok video URL, short link (vm.tiktok.com/...) or numeric video id."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The TikTok transcript.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TikTokTranscript"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "video_id": "7039900146041343278",
+                    "author": "thedailybugleofficial",
+                    "description": "Daily Bugle Exclusive: meet author Eugene “Flash” Thompson - the creator of the name “Spider-Man.”",
+                    "language": "eng-US",
+                    "auto_generated": true,
+                    "segments": [
+                      {
+                        "start": 4.525,
+                        "text": "In your book, you revealed that the name spider man was your idea."
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing or invalid parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "missing": {
+                    "value": {
+                      "success": false,
+                      "code": "MISSING_API_KEY",
+                      "message": "Provide an API key via the Authorization: Bearer header or the x-api-key header."
+                    }
+                  },
+                  "invalid": {
+                    "value": {
+                      "success": false,
+                      "code": "INVALID_API_KEY",
+                      "message": "This API key is invalid or has been revoked."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Out of credits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "paymentRequired": {
+                    "value": {
+                      "success": false,
+                      "code": "PAYMENT_REQUIRED",
+                      "message": "You have used all your credits. Buy a top-up or upgrade your plan at https://getyoutubetranscript.com/dashboard?plans=developers#plans",
+                      "creditsLeft": 0,
+                      "topupCreditsLeft": 0,
+                      "upgradeUrl": "https://getyoutubetranscript.com/dashboard?plans=developers#plans"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The TikTok has no captions, or it could not be found (TRANSCRIPT_NOT_FOUND).",
             "content": {
               "application/json": {
                 "schema": {

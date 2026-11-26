@@ -40,6 +40,7 @@ All endpoints live under `https://getyoutubetranscript.com/api/v1`.
 | `GET` | `/video/dislikes` | 1 | A video's estimated likes and dislikes |
 | `GET` | `/video` | 1 | A video's details: views, likes, upload date, duration, tags |
 | `GET` | `/video/comments` | 1 / page | A page of a video's top comments |
+| `GET` | `/tiktok/transcript` | 1 | A TikTok video's transcript as timed segments |
 | `GET` | `/playlist` | 1 | List every video in a playlist, paginated |
 | `GET` | `/credits` | free | Check remaining credit balance, plan, and rate limit |
 | `POST` | `/signup` | free | Self-serve signup step 1: email a 6-digit OTP |
@@ -336,6 +337,14 @@ Returns `data.title`, `data.description`, `data.channel` (`id`, `name`, `subscri
 | `continuation` | no | `data.continuation_token` from the previous page, sent with the same `v` |
 
 Returns `data.comments` (each `{comment_id, link, channel, published_date, text, likes, replies}`), `data.has_more` and `data.continuation_token` (`null` on the last page). 1 credit per page. A 404 `COMMENTS_DISABLED` means comments are turned off or the video does not exist.
+
+### `GET /tiktok/transcript`
+
+| Param | Required | Description |
+| --- | --- | --- |
+| `url` | yes | TikTok video URL, short link (`vm.tiktok.com/...`) or numeric video ID |
+
+Returns `data.video_id`, `data.author`, `data.description` (up to 500 characters), `data.language` (e.g. `"eng-US"`), `data.auto_generated` and `data.segments` (each `{start, text}`, `start` in seconds). A TikTok without captions, or one that can't be found, is a 404 `TRANSCRIPT_NOT_FOUND` and is not charged.
 
 ### `GET /playlist`
 
